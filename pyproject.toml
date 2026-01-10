@@ -1,0 +1,17 @@
+[project]
+name = "count-spatula"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "gridfinity-build123d",
+]
+
+[tool.uv.sources]
+gridfinity-build123d = { git = "ssh://git@github.com/Ruudjhuu/gridfinity_build123d" }
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.11",
+]
