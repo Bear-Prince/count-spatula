@@ -8,10 +8,12 @@ dependencies = [
     "gridfinity-build123d",
 ]
 
-[tool.uv.sources]
-gridfinity-build123d = { git = "ssh://git@github.com/Ruudjhuu/gridfinity_build123d" }
-
 [dependency-groups]
 dev = [
+    "jupyter>=1.1.1",
+    "ocp-vscode>=3.0.1",
     "ruff>=0.14.11",
 ]
+
+[tool.uv.sources]
+gridfinity-build123d = { git = "ssh://git@github.com/Ruudjhuu/gridfinity_build123d" }
