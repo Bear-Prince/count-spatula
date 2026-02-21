@@ -19,5 +19,8 @@ dev = [
 [tool.uv.sources]
 gridfinity-build123d = { git = "ssh://git@github.com/Ruudjhuu/gridfinity_build123d" }
 
+[tool.uv]
+required-environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
+
 [tool.pytest.ini_options]
 pythonpath = "."
