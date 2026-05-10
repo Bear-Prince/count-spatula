@@ -1,0 +1,60 @@
+schema: spec-driven
+
+context: |
+  Project: count-spatula
+  Domain: parametric 3D model generator for Gridfinity-compatible kitchen bins.
+  Primary output: STL files for 3D printing, including curated preset artifacts for releases.
+
+  Tech stack:
+  - Python 3.13
+  - Dependency manager: uv
+  - 3D geometry libraries: build123d, gridfinity-build123d
+  - Testing: pytest
+  - Linting: ruff
+  - Notebook prototyping: Jupyter
+
+  Repository structure intent:
+  - chop_bin.py is the main source of truth for model geometry behavior.
+  - main.py is legacy script flow and should evolve into a stable CLI entrypoint.
+  - notebooks/ are proof-of-concept and exploration, not the supported public interface.
+  - tests/ should validate geometry behavior, option handling, and export behavior.
+
+  Product and requirements approach:
+  - Frame work as epics and user stories.
+  - Use clear story format: As a <user>, I want <capability>, so that <benefit>.
+  - Keep each change scoped to one story or a tightly related story set.
+
+  Quality and delivery approach:
+  - Use TDD-oriented acceptance criteria and scenario-driven thinking.
+  - Prefer executable scenarios and explicit traceability from story to tests.
+  - Prioritize behavior clarity and test coverage visibility.
+
+  Collaboration and workflow conventions:
+  - One discrete change per branch.
+  - Branch naming: feature/<slug>, fix/<slug>, docs/<slug>, refactor/<slug>, chore/<slug>.
+  - Raise PR after branch work is complete and wait for user review/approval before merge.
+  - Any PR containing AI-generated code must disclose the coding agent and model used.
+
+  Style and coding conventions:
+  - Use LF line endings and UTF-8 encoding.
+  - Use spaces only for indentation; 4 spaces per level in Python.
+  - Keep line length to 120 characters.
+  - Comments should be grammatically correct sentences.
+
+rules:
+  proposal:
+    - Include sections for Epic, User Stories, Acceptance Criteria, Non-goals, and Test Strategy.
+    - Use User Story format: As a <user>, I want <capability>, so that <benefit>.
+    - Express acceptance criteria as scenario-style statements, preferably Given/When/Then.
+    - Make scope boundaries explicit so proposals stay implementable on a single branch.
+
+  design:
+    - Map each major design decision to at least one acceptance criterion.
+    - Identify how design choices preserve existing default geometry behavior.
+    - Call out compatibility risks for CLI usage, export flow, and future v1.0 packaging.
+
+  tasks:
+    - Include test tasks for each story before or alongside implementation tasks.
+    - Map tasks to acceptance criteria so coverage is visible.
+    - Keep tasks small, concrete, and independently verifiable.
+    - Include lint/test verification tasks before marking work complete.
