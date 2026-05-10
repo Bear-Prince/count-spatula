@@ -12,3 +12,9 @@ wheels/
 # 3D model files
 *.stl
 *.step
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# VS Code settings
+.vscode/
