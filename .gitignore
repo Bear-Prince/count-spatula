@@ -8,3 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
+
+# 3D model files
+*.stl
+*.step
