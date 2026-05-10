@@ -20,7 +20,7 @@ context: |
   - tests/ should validate geometry behavior, option handling, and export behavior.
 
   Product and requirements approach:
-  - Frame work in Epics and User Stories.
+  - Frame work as epics and user stories.
   - Use clear story format: As a <user>, I want <capability>, so that <benefit>.
   - Keep each change scoped to one story or a tightly related story set.
 
