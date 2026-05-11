@@ -1,26 +1,25 @@
 from build123d import (
+    MM,
     Align,
     Axis,
-    BuildPart,
     BasePartObject,
-    BuildLine,
-    BuildSketch,
     BaseSketchObject,
+    BuildLine,
+    BuildPart,
+    BuildSketch,
     FilletPolyline,
     Line,
-    MM,
     Mode,
     Plane,
     RectangleRounded,
     RotationLike,
     add,
     extrude,
-    export_stl,
     make_face,
     mirror,
 )
-from ocp_vscode import show
 from gridfinity_build123d import BaseEqual
+from ocp_vscode import show
 
 BASE_LENGTH = 6 # Units
 BASE_WIDTH = 4 # Units
@@ -34,12 +33,17 @@ CHOP_HEIGHT = (HEIGHT - 7) * MM # mm
 
 SIDE_DOUBLE_LENGTH = 75 * MM # mm from outside edge of bin wall to edge of cutout
 SIDE_HALF_LENGTH = (BASE_LENGTH * 42 * MM) / 2 # mm from centerline to outside edge of bin wall
-CUTOUT_LENGTH = SIDE_HALF_LENGTH - SIDE_DOUBLE_LENGTH # mm from centerline to edge of cutout 
+CUTOUT_LENGTH = SIDE_HALF_LENGTH - SIDE_DOUBLE_LENGTH # mm from centerline to edge of cutout
 CUTOUT_RADIUS = 12.5 * MM # mm radius of side cutout arc
 CUTOUT_ARC = CUTOUT_LENGTH + CUTOUT_RADIUS + 0.1 * MM # mm from centerline to edge of cutout arc
 
 class ChopProfile(BaseSketchObject):
-    def __init__(self, rotation: RotationLike = (0, 0, 0), align: Align | tuple[Align, Align] | None = None, mode: Mode = Mode.ADD):
+    def __init__(
+        self,
+        rotation: RotationLike = (0, 0, 0),
+        align: Align | tuple[Align, Align] | None = None,
+        mode: Mode = Mode.ADD,
+    ) -> None:
         with BuildSketch() as chop_profile:
             with BuildLine():
                 FilletPolyline(
@@ -67,7 +71,7 @@ class ChopBin(BasePartObject):
         rotation: RotationLike = (0, 0, 0),
         align: Align | tuple[Align, Align, Align] | None = None,
         mode: Mode = Mode.ADD,
-    ):
+    ) -> None:
         """Construct a custom bin object.
 
         Args:
@@ -85,16 +89,13 @@ class ChopBin(BasePartObject):
         if height and height_in_units:
             msg = "height or height_in_units can be defined, not both"
             raise ValueError(msg)
-        if height_in_units:
-            bin_height = height_in_units * 7
-        else:
-            bin_height = height
+        bin_height = height_in_units * 7 if height_in_units else height
 
-        with BuildPart() as bin:
+        with BuildPart() as build:
             # Add the base
             add(
                 BaseEqual(
-                    grid_x=BASE_WIDTH, 
+                    grid_x=BASE_WIDTH,
                     grid_y=BASE_LENGTH,
                     rotation=rotation,
                     align=align,
@@ -102,16 +103,16 @@ class ChopBin(BasePartObject):
                 )
             )
             # Add a sketch on top for the chop compartment
-            with BuildSketch(bin.faces().sort_by(Axis.Z)[-1]) as chop_sketch:
+            with BuildSketch(build.faces().sort_by(Axis.Z)[-1]) as chop_sketch:
 
                 RectangleRounded(
-                    height=BASE_LENGTH * 42 * MM, 
+                    height=BASE_LENGTH * 42 * MM,
                     width=BASE_WIDTH * 42 * MM,
                     radius=BASE_CORNER_RADIUS * MM,
                     align=(Align.CENTER, Align.CENTER)
                 )
                 RectangleRounded(
-                    height=CHOP_LENGTH * MM, 
+                    height=CHOP_LENGTH * MM,
                     width=CHOP_WIDTH * MM,
                     radius=CHOP_CORNER_RADIUS * MM,
                     mode=Mode.SUBTRACT,
@@ -121,8 +122,8 @@ class ChopBin(BasePartObject):
             extrude(to_extrude=chop_sketch.face(), amount=bin_height)
             # Add the cutout on the side for the chopping boards
             side_faces = [
-                bin.faces().sort_by(Axis.X)[0],
-                bin.faces().sort_by(Axis.X)[-1],
+                build.faces().sort_by(Axis.X)[0],
+                build.faces().sort_by(Axis.X)[-1],
             ]
             with BuildSketch(side_faces) as side_sketch:
                 ChopProfile(align=(Align.CENTER, Align.MIN))
@@ -130,30 +131,30 @@ class ChopBin(BasePartObject):
             # Extrude the cutout from long side of bin
             extrude(to_extrude=side_sketch.faces(), amount=-20, mode=Mode.SUBTRACT)
 
-        super().__init__(bin.part, rotation, align, mode)
+        super().__init__(build.part, rotation, align, mode)
 
     @property
-    def top(self):
+    def top(self) -> object:
         return self.faces().sort_by(Axis.Z)[-1]
 
     @property
-    def bottom(self):
+    def bottom(self) -> object:
         return self.faces().sort_by(Axis.Z)[0]
 
     @property
-    def front(self):
+    def front(self) -> object:
         return self.faces().sort_by(Axis.Y)[0]
 
     @property
-    def back(self):
+    def back(self) -> object:
         return self.faces().sort_by(Axis.Y)[-1]
 
     @property
-    def left(self):
+    def left(self) -> object:
         return self.faces().sort_by(Axis.X)[0]
 
     @property
-    def right(self):
+    def right(self) -> object:
         return self.faces().sort_by(Axis.X)[-1]
 
 if __name__ == "__main__":

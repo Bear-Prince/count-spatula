@@ -24,3 +24,40 @@ required-environments = ["sys_platform == 'linux' and platform_machine == 'x86_6
 
 [tool.pytest.ini_options]
 pythonpath = "."
+
+[tool.ruff]
+line-length = 120
+extend-exclude = [
+    "notebooks/*.ipynb",
+]
+
+[tool.ruff.lint]
+select = [
+    "ANN",    # Catch missing type annotations
+    "ARG",    # Flag unused arguments
+    "B",      # Highlight common bugs in python
+    "BLE",    # Disallow catch-all exceptions
+    "C4",     # Catch incorrect use of comprehensions, dict, list, etc
+    "E",      # General pycodestyle errors
+    "F",      # Use pyflakes
+    "FAST",   # FastAPI linting rules
+    "FURB",   # Code modernization and anti-pattern lints
+    "I",      # Use isort for imports
+    "ICN",    # Follow flake8 import conventions
+    "ISC",    # Catch implicit string concatenation mistakes
+    "LOG",    # Catch invalid logging
+    "N",      # Use pep8 naming
+    "PD",     # Follow pandas conventions
+    "PERF",   # Performance-focused lints
+    "PIE",    # Miscellaneous lints
+    "PLC",    # Pylint conventions
+    "PTH",    # Use pathlib instead of os.path
+    "Q",      # String quoting consistency
+    "RET",    # Return statement good practice
+    "RSE",    # Unnecessary parens on raise
+    "RUF",    # Ruff-specific lints
+    "SIM",    # Common simplification rules
+    "TID",    # Flake8 tidy imports
+    "UP",     # Code modernization
+    "W",      # pycodestyle warnings
+]

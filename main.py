@@ -1,11 +1,11 @@
 from build123d import export_stl
-from ocp_vscode import show_all
 from gridfinity_build123d import (
     BaseEqual,
     Bin,
     Compartment,
     CompartmentsEqual,
 )
+from ocp_vscode import show_all
 
 part = Bin(
     BaseEqual(grid_x=6, grid_y=4),
