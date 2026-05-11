@@ -1,24 +1,24 @@
-from build123d import Axis
-from chop_bin import ChopBin, CHOP_HEIGHT, BASE_LENGTH, BASE_WIDTH
+from chop_bin import BASE_LENGTH, BASE_WIDTH, CHOP_HEIGHT, ChopBin
 
-def test_chop_bin_creation():
+
+def test_chop_bin_creation() -> None:
     """Test that ChopBin can be instantiated and has valid geometry."""
     # Instantiate the bin
     bin_obj = ChopBin(height=CHOP_HEIGHT)
-    
+
     # 1. Validity Check
     assert bin_obj is not None
     assert bin_obj.volume > 0
-    
+
     # 2. Bounding Box Check
     bbox = bin_obj.bounding_box()
-    
+
     # Gridfinity units are typically 42mm
     # We expect some tolerance, but roughly:
     expected_width_mm = BASE_WIDTH * 42
     expected_length_mm = BASE_LENGTH * 42
     expected_height_mm = CHOP_HEIGHT
-    
+
     # Check dimensions (allowing for small float differences or fit tolerances)
     # Using a 1mm tolerance for safety, can be tightened later
     assert abs(bbox.size.X - expected_width_mm) < 1.0, f"Width {bbox.size.X} mismatch"
