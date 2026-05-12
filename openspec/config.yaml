@@ -37,9 +37,20 @@ context: |
 
   Style and coding conventions:
   - Use LF line endings and UTF-8 encoding.
+  - Use LF as a line terminator; non-empty text files should end with a newline.
+  - Do not use trailing whitespace, except one trailing space in Markdown when intentionally used for a line break.
   - Use spaces only for indentation; 4 spaces per level in Python.
+  - Use 2 spaces per indentation level in YAML and JSON files.
   - Keep line length to 120 characters.
   - Comments should be grammatically correct sentences.
+  - Use Unix-style forward-slash paths in code and documentation.
+  - Prefer Markdown with .md extension for documentation files.
+
+  Installation and running:
+  - Install development dependencies with: uv pip install -e .[dev]
+  - Run the generator with: python main.py
+  - Running main.py generates chopping_blocks_6x4.stl in the repository root.
+  - For 3D model viewing in VS Code, use ocp-vscode; show_all() in main.py displays the model.
 
 rules:
   proposal:

@@ -383,6 +383,7 @@ dev = [
     { name = "jupyter" },
     { name = "ocp-vscode" },
     { name = "pytest" },
+    { name = "pyyaml" },
     { name = "ruff" },
 ]
 
@@ -394,6 +395,7 @@ dev = [
     { name = "jupyter", specifier = ">=1.1.1" },
     { name = "ocp-vscode", specifier = ">=3.0.1" },
     { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "ruff", specifier = ">=0.14.11" },
 ]
 
