@@ -50,6 +50,9 @@ context: |
   - Install development dependencies with: uv pip install -e .[dev]
   - Run the generator with: python main.py
   - Running main.py generates chopping_blocks_6x4.stl in the repository root.
+  - Validate OpenSpec YAML syntax with: uv run python -c "import pathlib, yaml; yaml.safe_load(pathlib.Path('openspec/config.yaml').read_text(encoding='utf-8'))"
+  - Run lint checks with: uv run ruff check .
+  - Run tests with: uv run pytest
   - For 3D model viewing in VS Code, use ocp-vscode; show_all() in main.py displays the model.
 
 rules:
