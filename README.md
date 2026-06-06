@@ -14,7 +14,8 @@ pnpm exec openspec new change "my-change-name"
 ```
 
 You can also use the package script alias.
-When passing flags to the underlying CLI, include `--` so pnpm forwards arguments to `openspec`:
+When passing flags to the underlying CLI, include `--` so pnpm forwards
+arguments to `openspec`:
 
 ```bash
 pnpm run openspec -- --version
@@ -24,4 +25,5 @@ pnpm run openspec -- --help
 ## Generated files
 
 Do not edit `pnpm-lock.yaml` directly.
-Regenerate it with pnpm commands (for example, `pnpm install` or `pnpm install --lockfile-only`) so it stays valid and reproducible.
+Regenerate it with pnpm commands (for example, `pnpm install` or `pnpm install
+--lockfile-only`) so it stays valid and reproducible.
