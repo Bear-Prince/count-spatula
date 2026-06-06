@@ -1,0 +1,21 @@
+# count-spatula
+
+## OpenSpec (local to this repo)
+
+This repository uses the OpenSpec CLI as a local dev dependency.
+Run it with `pnpm` so you do not depend on a global PATH setup.
+
+### Common commands
+
+```bash
+pnpm exec openspec --version
+pnpm exec openspec --help
+pnpm exec openspec new change "my-change-name"
+```
+
+You can also use the package script alias:
+
+```bash
+pnpm run openspec --version
+pnpm run openspec --help
+```
