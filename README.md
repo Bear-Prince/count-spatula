@@ -13,11 +13,12 @@ pnpm exec openspec --help
 pnpm exec openspec new change "my-change-name"
 ```
 
-You can also use the package script alias:
+You can also use the package script alias.
+When passing flags to the underlying CLI, include `--` so pnpm forwards arguments to `openspec`:
 
 ```bash
-pnpm run openspec --version
-pnpm run openspec --help
+pnpm run openspec -- --version
+pnpm run openspec -- --help
 ```
 
 ## Generated files
