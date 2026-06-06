@@ -102,8 +102,10 @@ class BinParameters:
                 "chop_corner_radius_mm must be between 0 and half of the smaller chop dimension"
             )
 
-        if self.base_corner_radius_mm < 0:
-            errors.append("base_corner_radius_mm must be zero or positive")
+        if not 0 <= self.base_corner_radius_mm <= (min(max_outer_length, max_outer_width) / 2):
+            errors.append(
+                "base_corner_radius_mm must be between 0 and half of the smaller outer bin dimension"
+            )
 
         if self.cutout_offset_from_edge_mm <= 0:
             errors.append("cutout_offset_from_edge_mm must be greater than 0")
