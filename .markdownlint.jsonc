@@ -1,9 +1,4 @@
 {
   "default": true,
   "MD013": false,
-  "ignores": [
-    "node_modules/**",
-    ".github/**",
-    "openspec/changes/**"
-  ]
 }
