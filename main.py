@@ -48,10 +48,8 @@ def create_parameters(args: argparse.Namespace) -> BinParameters:
 
 def default_output_path(params: BinParameters) -> Path:
     """Build a deterministic default output path for the generated STL."""
-    file_name = (
-        f"chop_bin_{params.grid_length_units}x{params.grid_width_units}_"
-        f"h{round(params.bin_height_mm)}.stl"
-    )
+    height_token = f"{params.bin_height_mm:g}".replace(".", "p")
+    file_name = f"chop_bin_{params.grid_length_units}x{params.grid_width_units}_h{height_token}.stl"
     return Path.cwd() / file_name
 
 
