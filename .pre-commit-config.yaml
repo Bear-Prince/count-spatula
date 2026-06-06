@@ -10,10 +10,10 @@ repos:
 
       - id: markdownlint
         name: Markdownlint
-        entry: pnpm exec markdownlint
+        entry: pnpm exec markdownlint --config .markdownlint.jsonc
         language: system
         files: \.md$
-        exclude: ^(node_modules/|\.github/)
+        exclude: ^(node_modules/|\.github/|openspec/changes/)
         pass_filenames: true
         stages: [pre-commit]
 
