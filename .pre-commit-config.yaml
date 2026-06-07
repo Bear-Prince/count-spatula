@@ -10,10 +10,10 @@ repos:
 
       - id: markdownlint
         name: Markdownlint
-        entry: pnpm exec markdownlint
+        entry: pnpm exec markdownlint --config .markdownlint.jsonc
         language: system
         files: \.md$
-        exclude: ^(node_modules/|\.github/)
+        exclude: ^(node_modules/|\.github/|openspec/changes/)
         pass_filenames: true
         stages: [pre-commit]
 
@@ -22,7 +22,7 @@ repos:
         entry: uv run pytest -q
         language: system
         pass_filenames: false
-        stages: [pre-commit]
+        stages: [pre-push]
 
       - id: yamllint
         name: YAML lint
