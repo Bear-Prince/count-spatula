@@ -1,3 +1,4 @@
 node_modules/
 .github/
 openspec/changes/
+.claude/
