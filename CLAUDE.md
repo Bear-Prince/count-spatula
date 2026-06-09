@@ -45,7 +45,7 @@ Pre-commit hooks run `ruff check`, `markdownlint`, and `yamllint` on commit; `py
 
 ## OpenSpec change workflow
 
-Changes are proposed, designed, and tracked via OpenSpec (local dev dependency, run via `pnpm`). Active changes live under `openspec/changes/`. The workflow skills `/opsx:propose`, `/opsx:apply`, `/opsx:sync`, and `/opsx:archive` drive the lifecycle.
+Changes are proposed, designed, and tracked via OpenSpec (local dev dependency, run via `pnpm`). Active changes live under `openspec/changes/`. The workflow skills `/opsx:explore`, `/opsx:propose`, `/opsx:apply`, `/opsx:sync`, and `/opsx:archive` drive the lifecycle.
 
 Branch conventions: `feature/<slug>`, `fix/<slug>`, `docs/<slug>`, `refactor/<slug>`, `chore/<slug>`. Open a PR after branch work is complete; do not merge without user review. Any PR with AI-generated code must disclose the coding agent and model used.
 
