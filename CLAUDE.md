@@ -28,7 +28,7 @@ pnpm exec openspec --help
 pnpm exec openspec new change "my-change-name"
 ```
 
-Pre-commit hooks run `ruff check` and `yamllint` on commit; `pytest` runs on push. Install hooks with `uv run pre-commit install`.
+Pre-commit hooks run `ruff check`, `markdownlint`, and `yamllint` on commit; `pytest` runs on push. Install hooks with `uv run pre-commit install`.
 
 ## Architecture
 
