@@ -27,6 +27,13 @@ def test_default_output_path_is_deterministic() -> None:
     assert output.name == "chop_bin_6x4_h56.stl"
 
 
+def test_default_output_path_encodes_fractional_height() -> None:
+    """Float heights should use 'p' as the decimal separator so the filename stays shell-safe."""
+    params = BinParameters(grid_length_units=3, grid_width_units=2, bin_height_mm=42.5)
+    output = main.default_output_path(params)
+    assert output.name == "chop_bin_3x2_h42p5.stl"
+
+
 def test_cli_exports_stl_successfully(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """CLI should export to an explicit output path and return success."""
 
