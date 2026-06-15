@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+from build123d.mesher import Mesher
 
 import main
 from utensil_bin import UtensilBinParameters, check_print_bed, create_utensil_bin
@@ -117,6 +118,34 @@ def test_create_utensil_bin_freeform_height() -> None:
     # Bin.height is extruded above the Gridfinity base (~7 mm), so total Z > requested height.
     assert params.height_mm < bbox.size.Z, f"Z size {bbox.size.Z} should exceed height_mm"
     assert params.height_mm + 15.0 > bbox.size.Z, f"Z size {bbox.size.Z} unexpectedly large"
+
+
+# ---------------------------------------------------------------------------
+# Real export round-trip (exercises export_bin -> Mesher, not a mock)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def small_part() -> object:
+    """Build a small utensil bin once and reuse it across export round-trip tests."""
+    params = UtensilBinParameters(grid_x=1, grid_y=1, height_in_units=2)
+    return create_utensil_bin(params)
+
+
+@pytest.mark.parametrize("extension", ["stl", "3mf"])
+def test_export_bin_writes_valid_mesh(small_part: object, tmp_path: Path, extension: str) -> None:
+    """export_bin should write a non-empty file that reads back as a single valid mesh."""
+    output_path = tmp_path / f"bin.{extension}"
+
+    returned = main.export_bin(small_part, output_path)
+
+    assert returned == output_path
+    assert output_path.exists()
+    assert output_path.stat().st_size > 0
+
+    # Re-open the written file to confirm it is parseable mesh geometry, not just bytes on disk.
+    shapes = Mesher().read(output_path)
+    assert len(shapes) == 1, f"Expected one shape in {extension}, got {len(shapes)}"
 
 
 # ---------------------------------------------------------------------------
