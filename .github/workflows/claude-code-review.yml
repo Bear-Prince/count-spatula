@@ -24,9 +24,10 @@ jobs:
       pull-requests: write
       issues: write
       id-token: write
+      checks: write
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
