@@ -55,7 +55,6 @@ def default_output_path(params: BinParameters) -> Path:
 
 def export_bin(params: BinParameters, output_path: Path) -> Path:
     """Generate and export a chopping bin as STL."""
-    params.validate()
     output_parent = output_path.parent
     if not output_parent.exists():
         msg = f"Output directory does not exist: {output_parent}"
