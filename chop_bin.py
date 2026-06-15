@@ -194,8 +194,6 @@ class ChopBin(BasePartObject):
                 BaseEqual(
                     grid_x=params.grid_width_units,
                     grid_y=params.grid_length_units,
-                    rotation=rotation,
-                    align=align,
                     mode=mode,
                 )
             )
