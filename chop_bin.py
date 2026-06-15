@@ -28,6 +28,7 @@ from gridfinity_build123d import BaseEqual
 BASE_LENGTH = 6  # Units
 BASE_WIDTH = 4  # Units
 BASE_CORNER_RADIUS = 7.5 / 2 * MM  # mm
+GRIDFINITY_PITCH_MM = 42 * MM  # Standard Gridfinity grid pitch in mm per unit.
 HEIGHT = 63 * MM  # mm
 
 CHOP_LENGTH = 220 * MM  # mm
@@ -60,7 +61,7 @@ class BinParameters:
     @property
     def side_half_length_mm(self) -> float:
         """Return the half-length of the bin side from centerline to outside edge."""
-        return (self.grid_length_units * 42 * MM) / 2
+        return (self.grid_length_units * GRIDFINITY_PITCH_MM) / 2
 
     @property
     def cutout_length_mm(self) -> float:
@@ -89,8 +90,8 @@ class BinParameters:
         if self.chop_width_mm <= 0:
             errors.append("chop_width_mm must be greater than 0")
 
-        max_outer_length = self.grid_length_units * 42 * MM
-        max_outer_width = self.grid_width_units * 42 * MM
+        max_outer_length = self.grid_length_units * GRIDFINITY_PITCH_MM
+        max_outer_width = self.grid_width_units * GRIDFINITY_PITCH_MM
         if self.chop_length_mm >= max_outer_length:
             errors.append("chop_length_mm must be smaller than the outer bin length")
         if self.chop_width_mm >= max_outer_width:
@@ -206,8 +207,8 @@ class ChopBin(BasePartObject):
 
             with BuildSketch(build.faces().sort_by(Axis.Z)[-1]) as chop_sketch:
                 RectangleRounded(
-                    height=params.grid_length_units * 42 * MM,
-                    width=params.grid_width_units * 42 * MM,
+                    height=params.grid_length_units * GRIDFINITY_PITCH_MM,
+                    width=params.grid_width_units * GRIDFINITY_PITCH_MM,
                     radius=params.base_corner_radius_mm,
                     align=(Align.CENTER, Align.CENTER),
                 )
