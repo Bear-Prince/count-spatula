@@ -269,7 +269,7 @@ class ChopBin(BasePartObject):
 
 def create_chop_bin(params: BinParameters | None = None) -> ChopBin:
     """Create a chopping-board bin from validated parameters."""
-    return ChopBin(params=params or BinParameters())
+    return ChopBin(params=params)
 
 
 if __name__ == "__main__":
