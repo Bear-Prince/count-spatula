@@ -115,7 +115,7 @@ class BinParameters:
                 "cutout_offset_from_edge_mm is too large for grid_length_units; it must leave room for a cutout"
             )
 
-        if (self.cutout_length_mm + self.cutout_radius_mm) >= self.side_half_length_mm:
+        if self.cutout_arc_mm >= self.side_half_length_mm:
             errors.append(
                 "cutout_offset_from_edge_mm and cutout_radius_mm are incompatible "
                 "for this grid_length_units"
