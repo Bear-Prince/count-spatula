@@ -11,6 +11,7 @@ from build123d import (
     BuildLine,
     BuildPart,
     BuildSketch,
+    Face,
     FilletPolyline,
     Line,
     Mode,
@@ -23,23 +24,18 @@ from build123d import (
     mirror,
 )
 from gridfinity_build123d import BaseEqual
-from ocp_vscode import show
 
 BASE_LENGTH = 6  # Units
 BASE_WIDTH = 4  # Units
 BASE_CORNER_RADIUS = 7.5 / 2 * MM  # mm
-HEIGHT = 63 * MM  # mm
+GRIDFINITY_PITCH_MM = 42 * MM  # Standard Gridfinity grid pitch in mm per unit.
 
 CHOP_LENGTH = 220 * MM  # mm
 CHOP_WIDTH = 160 * MM  # mm
 CHOP_CORNER_RADIUS = 35 * MM  # mm
-CHOP_HEIGHT = (HEIGHT - 7) * MM  # mm
 
 SIDE_DOUBLE_LENGTH = 75 * MM  # mm from outside edge of bin wall to edge of cutout.
-SIDE_HALF_LENGTH = (BASE_LENGTH * 42 * MM) / 2  # mm from centerline to outside edge of bin wall.
-CUTOUT_LENGTH = SIDE_HALF_LENGTH - SIDE_DOUBLE_LENGTH  # mm from centerline to edge of cutout.
 CUTOUT_RADIUS = 12.5 * MM  # mm radius of side cutout arc
-CUTOUT_ARC = CUTOUT_LENGTH + CUTOUT_RADIUS + 0.1 * MM  # mm from centerline to edge of cutout arc.
 
 
 @dataclass(slots=True)
@@ -48,7 +44,7 @@ class BinParameters:
 
     grid_length_units: int = BASE_LENGTH
     grid_width_units: int = BASE_WIDTH
-    bin_height_mm: float = CHOP_HEIGHT
+    bin_height_mm: float = 56.0
     chop_length_mm: float = CHOP_LENGTH
     chop_width_mm: float = CHOP_WIDTH
     chop_corner_radius_mm: float = CHOP_CORNER_RADIUS
@@ -60,7 +56,7 @@ class BinParameters:
     @property
     def side_half_length_mm(self) -> float:
         """Return the half-length of the bin side from centerline to outside edge."""
-        return (self.grid_length_units * 42 * MM) / 2
+        return (self.grid_length_units * GRIDFINITY_PITCH_MM) / 2
 
     @property
     def cutout_length_mm(self) -> float:
@@ -89,8 +85,8 @@ class BinParameters:
         if self.chop_width_mm <= 0:
             errors.append("chop_width_mm must be greater than 0")
 
-        max_outer_length = self.grid_length_units * 42 * MM
-        max_outer_width = self.grid_width_units * 42 * MM
+        max_outer_length = self.grid_length_units * GRIDFINITY_PITCH_MM
+        max_outer_width = self.grid_width_units * GRIDFINITY_PITCH_MM
         if self.chop_length_mm >= max_outer_length:
             errors.append("chop_length_mm must be smaller than the outer bin length")
         if self.chop_width_mm >= max_outer_width:
@@ -119,7 +115,7 @@ class BinParameters:
                 "cutout_offset_from_edge_mm is too large for grid_length_units; it must leave room for a cutout"
             )
 
-        if (self.cutout_length_mm + self.cutout_radius_mm) >= self.side_half_length_mm:
+        if self.cutout_arc_mm >= self.side_half_length_mm:
             errors.append(
                 "cutout_offset_from_edge_mm and cutout_radius_mm are incompatible "
                 "for this grid_length_units"
@@ -166,24 +162,30 @@ class ChopBin(BasePartObject):
     def __init__(
         self,
         params: BinParameters | None = None,
-        height: float = 0,
+        height: float | None = None,
         height_in_units: int = 0,
         rotation: RotationLike = (0, 0, 0),
         align: Align | tuple[Align, Align, Align] | None = None,
         mode: Mode = Mode.ADD,
     ) -> None:
         """Construct a custom bin object."""
-        if params is not None and (height or height_in_units):
+        if params is not None and (height is not None or height_in_units):
             msg = "params cannot be combined with height or height_in_units"
             raise ValueError(msg)
 
-        if height and height_in_units:
+        if height is not None and height_in_units:
             msg = "height or height_in_units can be defined, not both"
             raise ValueError(msg)
 
         if params is None:
-            bin_height = height_in_units * 7 if height_in_units else height
-            params = BinParameters(bin_height_mm=bin_height)
+            if height_in_units:
+                params = BinParameters(bin_height_mm=height_in_units * 7)
+            elif height is not None:
+                params = BinParameters(bin_height_mm=height)
+            else:
+                # Fall back to the default parameter set so that a no-argument ChopBin() is
+                # usable rather than failing validation on a zero height.
+                params = BinParameters()
 
         params.validate()
 
@@ -192,16 +194,14 @@ class ChopBin(BasePartObject):
                 BaseEqual(
                     grid_x=params.grid_width_units,
                     grid_y=params.grid_length_units,
-                    rotation=rotation,
-                    align=align,
                     mode=mode,
                 )
             )
 
             with BuildSketch(build.faces().sort_by(Axis.Z)[-1]) as chop_sketch:
                 RectangleRounded(
-                    height=params.grid_length_units * 42 * MM,
-                    width=params.grid_width_units * 42 * MM,
+                    height=params.grid_length_units * GRIDFINITY_PITCH_MM,
+                    width=params.grid_width_units * GRIDFINITY_PITCH_MM,
                     radius=params.base_corner_radius_mm,
                     align=(Align.CENTER, Align.CENTER),
                 )
@@ -237,42 +237,46 @@ class ChopBin(BasePartObject):
         super().__init__(build.part, rotation, align, mode)
 
     @property
-    def top(self) -> object:
+    def top(self) -> Face:
         """Return the highest face of the bin."""
         return self.faces().sort_by(Axis.Z)[-1]
 
     @property
-    def bottom(self) -> object:
+    def bottom(self) -> Face:
         """Return the lowest face of the bin."""
         return self.faces().sort_by(Axis.Z)[0]
 
     @property
-    def front(self) -> object:
+    def front(self) -> Face:
         """Return the front face of the bin (minimum Y)."""
         return self.faces().sort_by(Axis.Y)[0]
 
     @property
-    def back(self) -> object:
+    def back(self) -> Face:
         """Return the back face of the bin (maximum Y)."""
         return self.faces().sort_by(Axis.Y)[-1]
 
     @property
-    def left(self) -> object:
+    def left(self) -> Face:
         """Return the left face of the bin (minimum X)."""
         return self.faces().sort_by(Axis.X)[0]
 
     @property
-    def right(self) -> object:
+    def right(self) -> Face:
         """Return the right face of the bin (maximum X)."""
         return self.faces().sort_by(Axis.X)[-1]
 
 
 def create_chop_bin(params: BinParameters | None = None) -> ChopBin:
     """Create a chopping-board bin from validated parameters."""
-    return ChopBin(params=params or BinParameters())
+    return ChopBin(params=params)
 
 
 if __name__ == "__main__":
+    # The viewer dependency is only needed for interactive runs, so it is imported here
+    # to keep the core geometry module free of dev-tool coupling.
+    from ocp_vscode import show
+
     chop_block = create_chop_bin()
     show(chop_block)
     # export_stl(chop_block, "chop_block.stl")
