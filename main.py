@@ -11,16 +11,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Generate Gridfinity-compatible kitchen utensil bins as STL files.",
     )
-    parser.add_argument("--grid-length", type=int, default=BinParameters().grid_length_units)
-    parser.add_argument("--grid-width", type=int, default=BinParameters().grid_width_units)
-    parser.add_argument("--height-mm", type=float, default=BinParameters().bin_height_mm)
-    parser.add_argument("--chop-length-mm", type=float, default=BinParameters().chop_length_mm)
-    parser.add_argument("--chop-width-mm", type=float, default=BinParameters().chop_width_mm)
-    parser.add_argument("--chop-corner-radius-mm", type=float, default=BinParameters().chop_corner_radius_mm)
-    parser.add_argument("--base-corner-radius-mm", type=float, default=BinParameters().base_corner_radius_mm)
-    parser.add_argument("--cutout-offset-mm", type=float, default=BinParameters().cutout_offset_from_edge_mm)
-    parser.add_argument("--cutout-radius-mm", type=float, default=BinParameters().cutout_radius_mm)
-    parser.add_argument("--cutout-depth-mm", type=float, default=BinParameters().cutout_depth_mm)
+    defaults = BinParameters()
+    parser.add_argument("--grid-length", type=int, default=defaults.grid_length_units)
+    parser.add_argument("--grid-width", type=int, default=defaults.grid_width_units)
+    parser.add_argument("--height-mm", type=float, default=defaults.bin_height_mm)
+    parser.add_argument("--chop-length-mm", type=float, default=defaults.chop_length_mm)
+    parser.add_argument("--chop-width-mm", type=float, default=defaults.chop_width_mm)
+    parser.add_argument("--chop-corner-radius-mm", type=float, default=defaults.chop_corner_radius_mm)
+    parser.add_argument("--base-corner-radius-mm", type=float, default=defaults.base_corner_radius_mm)
+    parser.add_argument("--cutout-offset-mm", type=float, default=defaults.cutout_offset_from_edge_mm)
+    parser.add_argument("--cutout-radius-mm", type=float, default=defaults.cutout_radius_mm)
+    parser.add_argument("--cutout-depth-mm", type=float, default=defaults.cutout_depth_mm)
     parser.add_argument(
         "--output",
         type=Path,
