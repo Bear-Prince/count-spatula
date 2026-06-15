@@ -11,6 +11,7 @@ from build123d import (
     BuildLine,
     BuildPart,
     BuildSketch,
+    Face,
     FilletPolyline,
     Line,
     Mode,
@@ -23,7 +24,6 @@ from build123d import (
     mirror,
 )
 from gridfinity_build123d import BaseEqual
-from ocp_vscode import show
 
 BASE_LENGTH = 6  # Units
 BASE_WIDTH = 4  # Units
@@ -182,8 +182,14 @@ class ChopBin(BasePartObject):
             raise ValueError(msg)
 
         if params is None:
-            bin_height = height_in_units * 7 if height_in_units else height
-            params = BinParameters(bin_height_mm=bin_height)
+            if height_in_units:
+                params = BinParameters(bin_height_mm=height_in_units * 7)
+            elif height:
+                params = BinParameters(bin_height_mm=height)
+            else:
+                # Fall back to the default parameter set so that a no-argument ChopBin() is
+                # usable rather than failing validation on a zero height.
+                params = BinParameters()
 
         params.validate()
 
@@ -237,32 +243,32 @@ class ChopBin(BasePartObject):
         super().__init__(build.part, rotation, align, mode)
 
     @property
-    def top(self) -> object:
+    def top(self) -> Face:
         """Return the highest face of the bin."""
         return self.faces().sort_by(Axis.Z)[-1]
 
     @property
-    def bottom(self) -> object:
+    def bottom(self) -> Face:
         """Return the lowest face of the bin."""
         return self.faces().sort_by(Axis.Z)[0]
 
     @property
-    def front(self) -> object:
+    def front(self) -> Face:
         """Return the front face of the bin (minimum Y)."""
         return self.faces().sort_by(Axis.Y)[0]
 
     @property
-    def back(self) -> object:
+    def back(self) -> Face:
         """Return the back face of the bin (maximum Y)."""
         return self.faces().sort_by(Axis.Y)[-1]
 
     @property
-    def left(self) -> object:
+    def left(self) -> Face:
         """Return the left face of the bin (minimum X)."""
         return self.faces().sort_by(Axis.X)[0]
 
     @property
-    def right(self) -> object:
+    def right(self) -> Face:
         """Return the right face of the bin (maximum X)."""
         return self.faces().sort_by(Axis.X)[-1]
 
@@ -273,6 +279,10 @@ def create_chop_bin(params: BinParameters | None = None) -> ChopBin:
 
 
 if __name__ == "__main__":
+    # The viewer dependency is only needed for interactive runs, so it is imported here
+    # to keep the core geometry module free of dev-tool coupling.
+    from ocp_vscode import show
+
     chop_block = create_chop_bin()
     show(chop_block)
     # export_stl(chop_block, "chop_block.stl")
