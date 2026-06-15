@@ -29,18 +29,13 @@ BASE_LENGTH = 6  # Units
 BASE_WIDTH = 4  # Units
 BASE_CORNER_RADIUS = 7.5 / 2 * MM  # mm
 GRIDFINITY_PITCH_MM = 42 * MM  # Standard Gridfinity grid pitch in mm per unit.
-HEIGHT = 63 * MM  # mm
 
 CHOP_LENGTH = 220 * MM  # mm
 CHOP_WIDTH = 160 * MM  # mm
 CHOP_CORNER_RADIUS = 35 * MM  # mm
-CHOP_HEIGHT = (HEIGHT - 7) * MM  # mm
 
 SIDE_DOUBLE_LENGTH = 75 * MM  # mm from outside edge of bin wall to edge of cutout.
-SIDE_HALF_LENGTH = (BASE_LENGTH * 42 * MM) / 2  # mm from centerline to outside edge of bin wall.
-CUTOUT_LENGTH = SIDE_HALF_LENGTH - SIDE_DOUBLE_LENGTH  # mm from centerline to edge of cutout.
 CUTOUT_RADIUS = 12.5 * MM  # mm radius of side cutout arc
-CUTOUT_ARC = CUTOUT_LENGTH + CUTOUT_RADIUS + 0.1 * MM  # mm from centerline to edge of cutout arc.
 
 
 @dataclass(slots=True)
@@ -49,7 +44,7 @@ class BinParameters:
 
     grid_length_units: int = BASE_LENGTH
     grid_width_units: int = BASE_WIDTH
-    bin_height_mm: float = CHOP_HEIGHT
+    bin_height_mm: float = 56.0
     chop_length_mm: float = CHOP_LENGTH
     chop_width_mm: float = CHOP_WIDTH
     chop_corner_radius_mm: float = CHOP_CORNER_RADIUS
