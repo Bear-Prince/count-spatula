@@ -162,25 +162,25 @@ class ChopBin(BasePartObject):
     def __init__(
         self,
         params: BinParameters | None = None,
-        height: float = 0,
+        height: float | None = None,
         height_in_units: int = 0,
         rotation: RotationLike = (0, 0, 0),
         align: Align | tuple[Align, Align, Align] | None = None,
         mode: Mode = Mode.ADD,
     ) -> None:
         """Construct a custom bin object."""
-        if params is not None and (height or height_in_units):
+        if params is not None and (height is not None or height_in_units):
             msg = "params cannot be combined with height or height_in_units"
             raise ValueError(msg)
 
-        if height and height_in_units:
+        if height is not None and height_in_units:
             msg = "height or height_in_units can be defined, not both"
             raise ValueError(msg)
 
         if params is None:
             if height_in_units:
                 params = BinParameters(bin_height_mm=height_in_units * 7)
-            elif height:
+            elif height is not None:
                 params = BinParameters(bin_height_mm=height)
             else:
                 # Fall back to the default parameter set so that a no-argument ChopBin() is
