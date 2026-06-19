@@ -96,12 +96,21 @@ def default_cut_and_reference() -> tuple:
 _BASE_BOX = ((0.0, 0.0, -2.0), (180.0, 260.0, 4.0))
 _LEFT_WALL_BOX = ((-79.0, 0.0, 40.0), (12.0, 260.0, 30.0))
 _RIGHT_WALL_BOX = ((79.0, 0.0, 40.0), (12.0, 260.0, 30.0))
+# A band that sits below the inner floor (the Gridfinity base top is at ~3.9 mm). The slot
+# must start at the inner floor, so nothing should be removed from this band.
+_BELOW_FLOOR_BOX = ((0.0, 0.0, 1.5), (180.0, 260.0, 4.0))
 
 
 def test_side_cutout_leaves_base_intact(default_cut_and_reference: tuple) -> None:
     """The side cutout must not remove any material from the Gridfinity base slab."""
     cut, uncut = default_cut_and_reference
     assert abs(_region_volume(cut, *_BASE_BOX) - _region_volume(uncut, *_BASE_BOX)) < 1.0
+
+
+def test_side_cutout_starts_at_inner_floor(default_cut_and_reference: tuple) -> None:
+    """The side cutout must begin at the inner floor and not cut into the base below it."""
+    cut, uncut = default_cut_and_reference
+    assert abs(_region_volume(cut, *_BELOW_FLOOR_BOX) - _region_volume(uncut, *_BELOW_FLOOR_BOX)) < 1.0
 
 
 def test_side_cutout_removes_material_from_walls(default_cut_and_reference: tuple) -> None:
