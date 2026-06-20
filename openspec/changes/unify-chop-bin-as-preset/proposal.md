@@ -34,7 +34,7 @@ preset rather than a bespoke class.
 - **Move `cutouts_enabled` onto the generic bin.** The toggle and its fit validation become a property of the
   unified bin, not the chop bin. The toggle is meaningful for plain bins (drawer alignment / grip) and is simply
   pinned **on** by the chop preset.
-- **Introduce presets.** Add named parameter bundles for the generic bin. Ship an `chop-board` preset that reproduces
+- **Introduce presets.** Add named parameter bundles for the generic bin. Ship a `chop-board` preset that reproduces
   today's chop bin (explicit chopping-board pocket + cutouts on).
 - **Retire `chop_bin.py`** once its geometry and defaults live in the generic bin and the `chop-board` preset.
 - **Redesign the CLI around presets.** Default behaviour may change (we are pre-1.0, and the user has accepted a
@@ -48,7 +48,7 @@ preset rather than a bespoke class.
 
 ### New Capabilities
 
-- `bin-presets`: named, ready-to-use parameter bundles for the generic bin, including an `chop-board` preset that
+- `bin-presets`: named, ready-to-use parameter bundles for the generic bin, including a `chop-board` preset that
   reproduces the current chopping-board bin.
 
 ### Modified Capabilities

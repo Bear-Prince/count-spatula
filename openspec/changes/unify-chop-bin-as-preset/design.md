@@ -21,7 +21,7 @@ expresses the chop bin as a preset.
 - One bin type and one parameter contract, with a selectable interior strategy.
 - `cutouts_enabled` (and the fit validation) as a property of the unified bin; default **on, full-height**, for
   plain bins; the chop preset pins it on.
-- A preset mechanism with an `chop-board` preset that reproduces today's chop bin geometry.
+- A preset mechanism with a `chop-board` preset that reproduces today's chop bin geometry.
 - Retire `chop_bin.py`; consolidate tests.
 
 **Non-Goals:**
