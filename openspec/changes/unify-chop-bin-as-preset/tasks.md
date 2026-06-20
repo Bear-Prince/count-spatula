@@ -1,6 +1,6 @@
 ## 1. Unified parameter model
 
-- [ ] 1.1 Create `kitchen_bin.py` with a `BinParameters` dataclass (grid_x, grid_y, height in units or mm,
+- [ ] 1.1 Create `cutlery_bin.py` with a `BinParameters` dataclass (grid_x, grid_y, height in units or mm,
   base corner radius, `cutouts_enabled`, cutout offset/radius) that holds an `interior` field.
 - [ ] 1.2 Define the interior union: `CompartmentInterior(div_x, div_y, wall_thickness_mm)` and
   `PocketInterior(length_mm, width_mm, corner_radius_mm)`.
@@ -8,17 +8,17 @@
   (compartment divisions/wall thickness, or pocket-fits-footprint), base corner radius, and the cutout-fit checks
   gated by `cutouts_enabled`.
 
-## 2. Unified geometry (KitchenBin)
+## 2. Unified geometry (CutleryBin)
 
-- [ ] 2.1 Implement `KitchenBin` building the Gridfinity base and open-top walls, dispatching on the interior:
+- [ ] 2.1 Implement `CutleryBin` building the Gridfinity base and open-top walls, dispatching on the interior:
   compartments via `gridfinity_build123d` `Bin`/`CompartmentsEqual`, pocket via a hand-sketched rounded-rectangle
   subtraction.
-- [ ] 2.2 Add a `create_kitchen_bin(params)` factory as the public entry point.
+- [ ] 2.2 Add a `create_cutlery_bin(params)` factory as the public entry point.
 
 ## 3. Side cutouts
 
-- [ ] 3.1 Port `ChopProfile` into `kitchen_bin.py` as `SideCutoutProfile`.
-- [ ] 3.2 Port the post-#16 YZ-plane through-cut into `KitchenBin`, gated by `cutouts_enabled`, cutting both
+- [ ] 3.1 Port `ChopProfile` into `cutlery_bin.py` as `SideCutoutProfile`.
+- [ ] 3.2 Port the post-#16 YZ-plane through-cut into `CutleryBin`, gated by `cutouts_enabled`, cutting both
   X-perpendicular walls from the inner floor to the top.
 
 ## 4. Presets
@@ -38,14 +38,14 @@
 
 ## 6. Retire and consolidate
 
-- [ ] 6.1 Delete `chop_bin.py`; ensure its geometry and defaults live in `kitchen_bin.py` / the `chop-board` preset.
-- [ ] 6.2 Fold `utensil_bin.py`'s bin pieces into `kitchen_bin.py`, retaining `check_print_bed`.
+- [ ] 6.1 Delete `chop_bin.py`; ensure its geometry and defaults live in `cutlery_bin.py` / the `chop-board` preset.
+- [ ] 6.2 Fold `utensil_bin.py`'s bin pieces into `cutlery_bin.py`, retaining `check_print_bed`.
 - [ ] 6.3 Update all imports across `main.py` and `tests/`.
 
 ## 7. Tests
 
 - [ ] 7.1 Port the #16 regression tests (walls slotted, base intact, slot starts at inner floor, symmetric) onto
-  `KitchenBin` (covers "Optional side cutouts").
+  `CutleryBin` (covers "Optional side cutouts").
 - [ ] 7.2 Test both interior strategies build valid geometry, and that the pocket yields non-uniform walls (covers
   "Explicit-pocket interior strategy", "Configurable compartment divisions").
 - [ ] 7.3 Test `cutouts_enabled` default-on, `False` → solid walls, and that fit validation only fires when enabled

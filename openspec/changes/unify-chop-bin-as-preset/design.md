@@ -59,7 +59,7 @@ expresses the chop bin as a preset.
   chop output; an unknown preset exits non-zero with actionable text. Exact flag surface is part of this design's
   review.
 - **Retire `chop_bin.py`; generalize the module.** Move the unified geometry into a neutrally-named module
-  (proposed `kitchen_bin.py` with class `KitchenBin`; `ChopProfile` → `SideCutoutProfile`), since both "chop" and
+  (proposed `cutlery_bin.py` with class `CutleryBin`; `ChopProfile` → `SideCutoutProfile`), since both "chop" and
   "utensil" undersell it. The `gridfinity-utensil-bin` capability spec keeps its name (history) but its content
   generalizes. *Acceptance:* `chop_bin.py` is gone, imports updated, the test suite consolidated and green.
 
@@ -80,7 +80,7 @@ expresses the chop bin as a preset.
 
 ## Migration Plan
 
-1. Build the unified `BinParameters` + interior union + `KitchenBin` geometry alongside the existing code.
+1. Build the unified `BinParameters` + interior union + `CutleryBin` geometry alongside the existing code.
 2. Port the cutout geometry/validation and the #16 regression tests onto it.
 3. Add the preset mechanism and the `chop-board` preset; lock chop equivalence with a regression test.
 4. Switch `main.py` to the preset-oriented CLI.
@@ -92,7 +92,7 @@ All within one PR. Rollback is reverting the PR.
 ## Open Questions
 
 - **Resolved:** plain-bin cutout default → enabled, full-height.
-- Module/class naming (`kitchen_bin.py` / `KitchenBin`, `SideCutoutProfile`) — reasonable default; confirm at
+- Module/class naming (`cutlery_bin.py` / `CutleryBin`, `SideCutoutProfile`) — reasonable default; confirm at
   design review.
 - Whether to keep a `utensil`-style preset/alias for familiarity, or rely solely on explicit flags. Proposed: no
   alias (pre-1.0).
