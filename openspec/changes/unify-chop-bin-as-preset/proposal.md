@@ -3,13 +3,13 @@
 This proposal began life as `utensil-bin-side-cutouts`, on the assumption that the generic utensil bin needed its
 own side cutouts to match the chopping-board bin in a drawer. Exploring it surfaced a mistake in that framing:
 
-- **The cutouts were never a generic-bin feature.** They exist on the chop bin to let you get an IKEA chopping
+- **The cutouts were never a generic-bin feature.** They exist on the chop bin to let you get a chopping
   board *out* of a snug pocket. They are intrinsic to the chop bin's job.
 - **The toggle was pointed at the wrong bin.** An earlier branch added a `cutouts_enabled` switch to the chop bin.
   But disabling cutouts on a chop bin is a footgun: the board becomes trapped. The ability to turn cutouts *off*
   only makes sense for a generic bin, which still works without them.
 - **The chop bin is not a separate kind of thing.** It is a generic open-top Gridfinity bin with two
-  distinguishing traits: a full-height side cutout, and an interior opening sized to an IKEA chopping board rather
+  distinguishing traits: a full-height side cutout, and an interior opening sized to a chopping board rather
   than derived from a uniform wall thickness.
 
 That last point reframes the whole effort. Rather than bolting cutouts onto the utensil bin as a parallel feature,
@@ -34,9 +34,9 @@ preset rather than a bespoke class.
 - **Move `cutouts_enabled` onto the generic bin.** The toggle and its fit validation become a property of the
   unified bin, not the chop bin. The toggle is meaningful for plain bins (drawer alignment / grip) and is simply
   pinned **on** by the chop preset.
-- **Introduce presets.** Add named parameter bundles for the generic bin. Ship an `ikea-chop` preset that reproduces
-  today's chop bin (explicit IKEA pocket + cutouts on).
-- **Retire `chop_bin.py`** once its geometry and defaults live in the generic bin and the `ikea-chop` preset.
+- **Introduce presets.** Add named parameter bundles for the generic bin. Ship an `chop-board` preset that reproduces
+  today's chop bin (explicit chopping-board pocket + cutouts on).
+- **Retire `chop_bin.py`** once its geometry and defaults live in the generic bin and the `chop-board` preset.
 - **Redesign the CLI around presets.** Default behaviour may change (we are pre-1.0, and the user has accepted a
   changed default), so the CLI is free to expose presets explicitly rather than preserving `python main.py` →
   chop bin.
@@ -48,7 +48,7 @@ preset rather than a bespoke class.
 
 ### New Capabilities
 
-- `bin-presets`: named, ready-to-use parameter bundles for the generic bin, including an `ikea-chop` preset that
+- `bin-presets`: named, ready-to-use parameter bundles for the generic bin, including an `chop-board` preset that
   reproduces the current chopping-board bin.
 
 ### Modified Capabilities

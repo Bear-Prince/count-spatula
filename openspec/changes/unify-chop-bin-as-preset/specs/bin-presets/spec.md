@@ -4,12 +4,12 @@
 
 The system SHALL provide named presets, each producing a fully-populated, valid set of bin parameters,
 so common bins can be generated without specifying every dimension. The system SHALL ship an
-`ikea-chop` preset that reproduces the chopping-board bin: an explicit 220 mm × 160 mm pocket with a
+`chop-board` preset that reproduces the chopping-board bin: an explicit 220 mm × 160 mm pocket with a
 35 mm corner radius, side cutouts enabled, on the established chop grid and height.
 
 #### Scenario: Generate a bin from a preset
 
-- **WHEN** a user selects the `ikea-chop` preset
+- **WHEN** a user selects the `chop-board` preset
 - **THEN** the system produces a bin equivalent to the previous chopping-board bin geometry (pocket
   interior, cutouts enabled)
 
@@ -32,7 +32,7 @@ interior, cutouts enabled).
 
 #### Scenario: Generate a preset bin from the CLI
 
-- **WHEN** the CLI is invoked with `--preset ikea-chop`
+- **WHEN** the CLI is invoked with `--preset chop-board`
 - **THEN** the chopping-board bin is generated and exported, returning a success exit code
 
 #### Scenario: Plain invocation generates a default bin

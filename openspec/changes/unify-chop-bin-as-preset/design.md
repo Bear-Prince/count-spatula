@@ -1,7 +1,7 @@
 ## Context
 
 The repo has two bin classes that share most of their geometry. `ChopBin` (in `chop_bin.py`) builds a Gridfinity
-base, extrudes walls around an explicitly-sized rounded pocket (IKEA-board sized), and cuts a full-height slot
+base, extrudes walls around an explicitly-sized rounded pocket (chopping-board sized), and cuts a full-height slot
 through two opposing walls. `UtensilBin` (in `utensil_bin.py`) builds a Gridfinity base and an open-top
 compartmentalized interior via `gridfinity_build123d`'s `Bin` + `CompartmentsEqual`, with no cutouts.
 
@@ -21,7 +21,7 @@ expresses the chop bin as a preset.
 - One bin type and one parameter contract, with a selectable interior strategy.
 - `cutouts_enabled` (and the fit validation) as a property of the unified bin; default **on, full-height**, for
   plain bins; the chop preset pins it on.
-- A preset mechanism with an `ikea-chop` preset that reproduces today's chop bin geometry.
+- A preset mechanism with an `chop-board` preset that reproduces today's chop bin geometry.
 - Retire `chop_bin.py`; consolidate tests.
 
 **Non-Goals:**
@@ -42,19 +42,19 @@ expresses the chop bin as a preset.
 - **Single `BinParameters`, standard Gridfinity orientation.** Replace both parameter classes with one, using
   `grid_x`/`grid_y` (matching `BaseEqual` and the utensil bin) rather than the chop bin's
   `grid_length`/`grid_width` swap. *Acceptance:* utensil dimensions and chop dimensions are both reproducible; the
-  `ikea-chop` preset's bounding box matches today's chop bin within tolerance.
+  `chop-board` preset's bounding box matches today's chop bin within tolerance.
 - **Cutouts become a generic feature, lifted verbatim from the post-#16 chop bin.** Reuse the YZ-plane,
   `both=True` through-cut and the `ChopProfile`; keep `cutout_offset_from_edge_mm` + `cutout_radius_mm` + the fit
   validation, gated by `cutouts_enabled`. Cutouts sit on the two walls perpendicular to X (as today). Default
   `cutouts_enabled=True`. *Acceptance:* the #16 regression guarantees (material removed from walls, base intact,
   starts at inner floor, symmetric) hold for the unified bin; `cutouts_enabled=False` leaves solid walls; fit
   validation only fires when enabled.
-- **Presets are named bundles that return a fully-populated `BinParameters`.** Ship `ikea-chop` (pocket
-  220×160 r35, base corner radius, cutouts on, height 56). *Acceptance:* the `ikea-chop` preset reproduces the
+- **Presets are named bundles that return a fully-populated `BinParameters`.** Ship `chop-board` (pocket
+  220×160 r35, base corner radius, cutouts on, height 56). *Acceptance:* the `chop-board` preset reproduces the
   current chop bin's volume/bbox; presets are discoverable/listable.
 - **CLI redesigned around presets.** A single generation entry takes `--preset <name>` (seeds defaults) plus
   explicit overrides and an interior selector; the chop default and the `utensil-bin` sub-command are removed. A
-  plain invocation produces a plain compartment bin (cutouts on). *Acceptance:* `--preset ikea-chop` reproduces
+  plain invocation produces a plain compartment bin (cutouts on). *Acceptance:* `--preset chop-board` reproduces
   chop output; an unknown preset exits non-zero with actionable text. Exact flag surface is part of this design's
   review.
 - **Retire `chop_bin.py`; generalize the module.** Move the unified geometry into a neutrally-named module
@@ -68,7 +68,7 @@ expresses the chop bin as a preset.
   escape a plain bin sideways. → Accepted by the product owner (drawer alignment prioritized, pre-1.0). Mitigation:
   documented in README; the partial-height retaining-lip profile remains available as future work.
 - **Default output changes.** [Risk] Plain utensil bins now have cutouts and a standardized orientation, so prior
-  outputs change. → Accepted (pre-1.0). Mitigation: the `ikea-chop` preset reproduces the chop bin exactly (locked
+  outputs change. → Accepted (pre-1.0). Mitigation: the `chop-board` preset reproduces the chop bin exactly (locked
   by a regression test); note the change in README.
 - **build123d sensitivity.** [Risk] The cut depends on the #16 YZ-plane technique and pinned build123d 0.9.0. →
   Mitigation: port the geometry and the #16 wall/base/floor/symmetry tests verbatim onto the unified bin; keep the
@@ -80,10 +80,10 @@ expresses the chop bin as a preset.
 
 1. Build the unified `BinParameters` + interior union + `KitchenBin` geometry alongside the existing code.
 2. Port the cutout geometry/validation and the #16 regression tests onto it.
-3. Add the preset mechanism and the `ikea-chop` preset; lock chop equivalence with a regression test.
+3. Add the preset mechanism and the `chop-board` preset; lock chop equivalence with a regression test.
 4. Switch `main.py` to the preset-oriented CLI.
 5. Delete `chop_bin.py` and `utensil_bin.py`'s superseded pieces; consolidate tests.
-6. UAT (generate plain bin, `ikea-chop`, `--no-cutouts`, a too-small-cutout error), then archive.
+6. UAT (generate plain bin, `chop-board`, `--no-cutouts`, a too-small-cutout error), then archive.
 
 All within one PR. Rollback is reverting the PR.
 

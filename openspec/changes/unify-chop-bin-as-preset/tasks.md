@@ -23,7 +23,7 @@
 
 ## 4. Presets
 
-- [ ] 4.1 Add a presets registry mapping names to `BinParameters` factories; implement `ikea-chop` (pocket
+- [ ] 4.1 Add a presets registry mapping names to `BinParameters` factories; implement `chop-board` (pocket
   220×160 mm, 35 mm radius, cutouts enabled, chop grid and height).
 - [ ] 4.2 Implement preset resolution and listing: resolve by name, list available names, and raise an actionable
   error for an unknown name.
@@ -32,13 +32,13 @@
 
 - [ ] 5.1 Replace the chop and `utensil-bin` parsers in `main.py` with a single preset-oriented parser: `--preset`,
   an interior selector, dimension overrides, `--no-cutouts`, and the existing `--format`/`--output`.
-- [ ] 5.2 Wire behaviour: plain invocation → default plain compartment bin (cutouts on); `--preset ikea-chop` →
+- [ ] 5.2 Wire behaviour: plain invocation → default plain compartment bin (cutouts on); `--preset chop-board` →
   chop bin; unknown preset → exit code 2 with actionable text.
 - [ ] 5.3 Update the default output filename logic for the unified bin and presets.
 
 ## 6. Retire and consolidate
 
-- [ ] 6.1 Delete `chop_bin.py`; ensure its geometry and defaults live in `kitchen_bin.py` / the `ikea-chop` preset.
+- [ ] 6.1 Delete `chop_bin.py`; ensure its geometry and defaults live in `kitchen_bin.py` / the `chop-board` preset.
 - [ ] 6.2 Fold `utensil_bin.py`'s bin pieces into `kitchen_bin.py`, retaining `check_print_bed`.
 - [ ] 6.3 Update all imports across `main.py` and `tests/`.
 
@@ -50,10 +50,10 @@
   "Explicit-pocket interior strategy", "Configurable compartment divisions").
 - [ ] 7.3 Test `cutouts_enabled` default-on, `False` → solid walls, and that fit validation only fires when enabled
   (covers the cutout scenarios).
-- [ ] 7.4 Test the `ikea-chop` preset reproduces the prior chop bin within tolerance (volume/bbox) (covers
+- [ ] 7.4 Test the `chop-board` preset reproduces the prior chop bin within tolerance (volume/bbox) (covers
   "Generate a bin from a preset").
 - [ ] 7.5 Test preset resolution: unknown preset raises; an override applies on top of the preset.
-- [ ] 7.6 Test the CLI: `--preset ikea-chop`, plain invocation, and unknown preset → exit 2 (covers "Preset-oriented
+- [ ] 7.6 Test the CLI: `--preset chop-board`, plain invocation, and unknown preset → exit 2 (covers "Preset-oriented
   CLI").
 - [ ] 7.7 Test parameter validation rejections: grid range, compartment divisions, wall thickness, pocket-too-large.
 
@@ -61,7 +61,7 @@
 
 - [ ] 8.1 Run `uv run ruff check .` and fix findings.
 - [ ] 8.2 Run `uv run pytest` and confirm the full suite passes.
-- [ ] 8.3 UAT: generate a plain bin, `--preset ikea-chop`, `--no-cutouts`, and a too-small-cutout error case; eyeball
+- [ ] 8.3 UAT: generate a plain bin, `--preset chop-board`, `--no-cutouts`, and a too-small-cutout error case; eyeball
   the exported STLs.
 - [ ] 8.4 Update `README.md` for the preset-oriented CLI and note the changed default behaviour.
 - [ ] 8.5 Archive the change so the spec deltas fold into `openspec/specs/`.
