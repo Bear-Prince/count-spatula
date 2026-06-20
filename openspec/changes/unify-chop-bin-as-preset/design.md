@@ -28,7 +28,8 @@ expresses the chop bin as a preset.
 
 - Choosing *which* walls get cutouts, or per-side cutout sizing (cutouts stay on the same opposing pair as today).
   Deferred.
-- A partial-height / retaining-lip cutout profile. Deferred (noted as a future option for containment).
+- A configurable cutout height or a partial-height / retaining-lip variant. Cutouts are always full-height
+  (inner floor to rim); there is no height option.
 - Preserving the current CLI surface. Default behaviour may change (pre-1.0).
 
 ## Decisions
@@ -64,9 +65,10 @@ expresses the chop bin as a preset.
 
 ## Risks / Trade-offs
 
-- **Containment vs. alignment (full-height default).** [Risk] A floor-to-rim slot on by default lets loose items
-  escape a plain bin sideways. → Accepted by the product owner (drawer alignment prioritized, pre-1.0). Mitigation:
-  documented in README; the partial-height retaining-lip profile remains available as future work.
+- **Full-height cutouts only.** [Risk] A floor-to-rim slot could let loose items escape a plain bin sideways. →
+  The product owner considers this a non-issue in practice: contents get piled in regardless, and a bin is printed
+  to fit its cutlery so items are held at both ends. Cutouts are therefore always full-height, with no
+  partial-height option. Mitigation: none required; the changed default is noted in the README.
 - **Default output changes.** [Risk] Plain utensil bins now have cutouts and a standardized orientation, so prior
   outputs change. → Accepted (pre-1.0). Mitigation: the `chop-board` preset reproduces the chop bin exactly (locked
   by a regression test); note the change in README.
