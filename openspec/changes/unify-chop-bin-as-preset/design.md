@@ -7,7 +7,7 @@ compartmentalized interior via `gridfinity_build123d`'s `Bin` + `CompartmentsEqu
 
 Post-#16, the side-cutout geometry is pocket-independent: it only needs the inner-floor Z, the top Z, the grid
 width to extrude through, and the `ChopProfile` dimensions. That makes it portable to any bin body. The two classes
-differ only in their **interior**: a uniform-wall compartment grid versus a single explicitly-sized pocket (whose
+differ only in their **interior**: a uniform-wall set of equal columns versus a single explicitly-sized pocket (whose
 walls are deliberately non-uniform — e.g. a 6×4 chop bin has 16 mm end walls and 4 mm side walls, which a single
 `wall_thickness` cannot express).
 
@@ -30,11 +30,13 @@ expresses the chop bin as a preset.
   Deferred.
 - A configurable cutout height or a partial-height / retaining-lip variant. Cutouts are always full-height
   (inner floor to rim); there is no height option.
+- A second compartment-division axis (2D grids). Dividers are single-axis (columns) only, so they stay
+  compatible with the through-cutout; this removes the current utensil bin's `div_y`.
 - Preserving the current CLI surface. Default behaviour may change (pre-1.0).
 
 ## Decisions
 
-- **One bin, two interior strategies modelled as a small union.** Add `CompartmentInterior(div_x, div_y,
+- **One bin, two interior strategies modelled as a small union.** Add `CompartmentInterior(divisions,
   wall_thickness_mm)` and `PocketInterior(length_mm, width_mm, corner_radius_mm)` dataclasses; the unified
   `BinParameters` holds exactly one as an `interior` field. *Alternative:* a `mode` enum plus optional fields —
   rejected, it invites invalid field combinations and weak validation. *Alternative:* subclasses per bin —
@@ -50,6 +52,14 @@ expresses the chop bin as a preset.
   `cutouts_enabled=True`. *Acceptance:* the #16 regression guarantees (material removed from walls, base intact,
   starts at inner floor, symmetric) hold for the unified bin; `cutouts_enabled=False` leaves solid walls; fit
   validation only fires when enabled.
+- **Dividers are single-axis and the cutout runs through them.** Compartment dividers are straight, evenly
+  spaced, and parallel to the two cut walls, spanning between the two un-cut walls so they are attached at both
+  ends; the bin splits into `divisions` equal columns. When cutouts are enabled, the full-height channel passes
+  through every divider (each divider gets the same notch as the cut walls). We deliberately drop the second
+  division axis: a divider perpendicular to the cut walls would attach to the cut walls and be clipped or left
+  floating by the cutout. `divisions` maps to the `CompartmentsEqual` axis aligned with the cutout's through-axis
+  (the other axis is fixed at 1). *Acceptance:* a multi-column bin with cutouts on keeps every divider attached at
+  both ends with the channel running through; only a single division count is accepted.
 - **Presets are named bundles that return a fully-populated `BinParameters`.** Ship `chop-board` (pocket
   220×160 r35, base corner radius, cutouts on, height 56). *Acceptance:* the `chop-board` preset reproduces the
   current chop bin's volume/bbox; presets are discoverable/listable.

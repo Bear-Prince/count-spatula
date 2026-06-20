@@ -2,8 +2,8 @@
 
 - [ ] 1.1 Create `cutlery_bin.py` with a `BinParameters` dataclass (grid_x, grid_y, height in units or mm,
   base corner radius, `cutouts_enabled`, cutout offset/radius) that holds an `interior` field.
-- [ ] 1.2 Define the interior union: `CompartmentInterior(div_x, div_y, wall_thickness_mm)` and
-  `PocketInterior(length_mm, width_mm, corner_radius_mm)`.
+- [ ] 1.2 Define the interior union: `CompartmentInterior(divisions, wall_thickness_mm)` (single-axis columns)
+  and `PocketInterior(length_mm, width_mm, corner_radius_mm)`.
 - [ ] 1.3 Implement `validate()` accumulating all errors: grid range, height, interior-specific checks
   (compartment divisions/wall thickness, or pocket-fits-footprint), base corner radius, and the cutout-fit checks
   gated by `cutouts_enabled`.
@@ -11,8 +11,8 @@
 ## 2. Unified geometry (CutleryBin)
 
 - [ ] 2.1 Implement `CutleryBin` building the Gridfinity base and open-top walls, dispatching on the interior:
-  compartments via `gridfinity_build123d` `Bin`/`CompartmentsEqual`, pocket via a hand-sketched rounded-rectangle
-  subtraction.
+  compartments via `gridfinity_build123d` `Bin`/`CompartmentsEqual` (single division axis; dividers straight and
+  parallel to the cut walls), pocket via a hand-sketched rounded-rectangle subtraction.
 - [ ] 2.2 Add a `create_cutlery_bin(params)` factory as the public entry point.
 
 ## 3. Side cutouts
@@ -46,8 +46,11 @@
 
 - [ ] 7.1 Port the #16 regression tests (walls slotted, base intact, slot starts at inner floor, symmetric) onto
   `CutleryBin` (covers "Optional side cutouts").
-- [ ] 7.2 Test both interior strategies build valid geometry, and that the pocket yields non-uniform walls (covers
-  "Explicit-pocket interior strategy", "Configurable compartment divisions").
+- [ ] 7.2 Test both interior strategies build valid geometry, that the pocket yields non-uniform walls, and that
+  compartment dividers are straight and parallel to the cut walls (covers "Explicit-pocket interior strategy",
+  "Configurable compartment divisions").
+- [ ] 7.2a Test that with cutouts enabled and two or more columns, the slot runs through every divider and each
+  divider stays attached to both un-cut walls (covers "Cutout passes through dividers").
 - [ ] 7.3 Test `cutouts_enabled` default-on, `False` → solid walls, and that fit validation only fires when enabled
   (covers the cutout scenarios).
 - [ ] 7.4 Test the `chop-board` preset reproduces the prior chop bin within tolerance (volume/bbox) (covers

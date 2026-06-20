@@ -27,7 +27,8 @@ preset rather than a bespoke class.
 ## What Changes
 
 - **Generalize the bin geometry.** Give the generic bin two interior strategies:
-  - *compartments* — N×M equal compartments with uniform walls (today's utensil bin), via `CompartmentsEqual`.
+  - *compartments* — N equal columns with uniform walls, split by straight dividers parallel to the cut walls
+    (single axis only), via `CompartmentsEqual`.
   - *explicit pocket* — one rounded-rectangle opening of an explicit size with potentially non-uniform walls
     (today's chop bin), hand-sketched. This is the new capability; it cannot be expressed by a single uniform
     `wall_thickness`, which is why the chop bin currently has its own class.
