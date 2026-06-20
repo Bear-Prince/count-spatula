@@ -51,7 +51,6 @@ class BinParameters:
     base_corner_radius_mm: float = BASE_CORNER_RADIUS
     cutout_offset_from_edge_mm: float = SIDE_DOUBLE_LENGTH
     cutout_radius_mm: float = CUTOUT_RADIUS
-    cutout_depth_mm: float = 20.0
 
     @property
     def side_half_length_mm(self) -> float:
@@ -107,8 +106,6 @@ class BinParameters:
             errors.append("cutout_offset_from_edge_mm must be greater than 0")
         if self.cutout_radius_mm <= 0:
             errors.append("cutout_radius_mm must be greater than 0")
-        if self.cutout_depth_mm <= 0:
-            errors.append("cutout_depth_mm must be greater than 0")
 
         if self.cutout_length_mm <= 0:
             errors.append(
@@ -198,7 +195,12 @@ class ChopBin(BasePartObject):
                 )
             )
 
-            with BuildSketch(build.faces().sort_by(Axis.Z)[-1]) as chop_sketch:
+            # The top face of the Gridfinity base is the inner floor of the bin; the side
+            # handle slots are measured from here up to the top of the walls.
+            base_top = build.faces().sort_by(Axis.Z)[-1]
+            floor_z = base_top.center().Z
+
+            with BuildSketch(base_top) as chop_sketch:
                 RectangleRounded(
                     height=params.grid_length_units * GRIDFINITY_PITCH_MM,
                     width=params.grid_width_units * GRIDFINITY_PITCH_MM,
@@ -214,23 +216,30 @@ class ChopBin(BasePartObject):
                 )
 
             extrude(to_extrude=chop_sketch.face(), amount=params.bin_height_mm)
+            top_z = build.part.bounding_box().max.Z
 
-            side_faces = [
-                build.faces().sort_by(Axis.X)[0],
-                build.faces().sort_by(Axis.X)[-1],
-            ]
-            with BuildSketch(side_faces) as side_sketch:
+            # Cut the side handle slots straight through both long walls. The profile is
+            # sketched once on a YZ-oriented plane positioned at the inner floor and
+            # extruded through the full width in both directions, so each wall receives an
+            # identical slot that spans the wall height (inner floor to top) without cutting
+            # into the base below it. Sketching directly on the two opposing wall faces is
+            # unreliable: the per-face sketch frame flips vertically between the +X and -X
+            # walls, which silently places the cut in the base instead of the walls.
+            half_width = params.grid_width_units * GRIDFINITY_PITCH_MM / 2
+            cut_plane = Plane(origin=(0, 0, floor_z), x_dir=(0, 1, 0), z_dir=(1, 0, 0))
+            with BuildSketch(cut_plane) as side_sketch:
                 ChopProfile(
                     cutout_length=params.cutout_length_mm,
-                    chop_height=params.bin_height_mm,
+                    chop_height=top_z - floor_z,
                     cutout_arc=params.cutout_arc_mm,
                     cutout_radius=params.cutout_radius_mm,
                     align=(Align.CENTER, Align.MIN),
                 )
 
             extrude(
-                to_extrude=side_sketch.faces(),
-                amount=-params.cutout_depth_mm,
+                to_extrude=side_sketch.sketch.faces(),
+                amount=half_width + 1,
+                both=True,
                 mode=Mode.SUBTRACT,
             )
 

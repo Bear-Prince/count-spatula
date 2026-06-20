@@ -39,7 +39,6 @@ def _build_chop_parser() -> argparse.ArgumentParser:
     parser.add_argument("--base-corner-radius-mm", type=float, default=defaults.base_corner_radius_mm)
     parser.add_argument("--cutout-offset-mm", type=float, default=defaults.cutout_offset_from_edge_mm)
     parser.add_argument("--cutout-radius-mm", type=float, default=defaults.cutout_radius_mm)
-    parser.add_argument("--cutout-depth-mm", type=float, default=defaults.cutout_depth_mm)
     parser.add_argument(
         "--format",
         choices=["stl", "3mf"],
@@ -72,7 +71,6 @@ def create_parameters(args: argparse.Namespace) -> BinParameters:
         base_corner_radius_mm=args.base_corner_radius_mm,
         cutout_offset_from_edge_mm=args.cutout_offset_mm,
         cutout_radius_mm=args.cutout_radius_mm,
-        cutout_depth_mm=args.cutout_depth_mm,
     )
 
 
