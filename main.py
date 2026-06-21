@@ -1,14 +1,21 @@
-"""CLI entry point for parametric Gridfinity kitchen bin generation."""
+"""CLI entry point for parametric Gridfinity kitchen/cutlery bin generation."""
 
 import argparse
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 from build123d.mesher import Mesher
 from build123d.topology import Shape
 
-from chop_bin import BinParameters, create_chop_bin
-from utensil_bin import UtensilBinParameters, check_print_bed, create_utensil_bin
+from cutlery_bin import (
+    BinParameters,
+    check_print_bed,
+    create_cutlery_bin,
+    create_kitchen_bin,
+    preset_names,
+    resolve_preset,
+)
 
 
 def export_bin(part: Shape, output_path: Path) -> Path:
@@ -19,112 +26,24 @@ def export_bin(part: Shape, output_path: Path) -> Path:
     return output_path
 
 
-# ---------------------------------------------------------------------------
-# Chopping-board bin
-# ---------------------------------------------------------------------------
-
-
-def _build_chop_parser() -> argparse.ArgumentParser:
-    """Build the argument parser for the chopping-board bin command."""
-    parser = argparse.ArgumentParser(
-        description="Generate a Gridfinity-compatible chopping-board bin as STL or 3MF.",
-    )
-    defaults = BinParameters()
-    parser.add_argument("--grid-length", type=int, default=defaults.grid_length_units)
-    parser.add_argument("--grid-width", type=int, default=defaults.grid_width_units)
-    parser.add_argument("--height-mm", type=float, default=defaults.bin_height_mm)
-    parser.add_argument("--chop-length-mm", type=float, default=defaults.chop_length_mm)
-    parser.add_argument("--chop-width-mm", type=float, default=defaults.chop_width_mm)
-    parser.add_argument("--chop-corner-radius-mm", type=float, default=defaults.chop_corner_radius_mm)
-    parser.add_argument("--base-corner-radius-mm", type=float, default=defaults.base_corner_radius_mm)
-    parser.add_argument("--cutout-offset-mm", type=float, default=defaults.cutout_offset_from_edge_mm)
-    parser.add_argument("--cutout-radius-mm", type=float, default=defaults.cutout_radius_mm)
-    parser.add_argument(
-        "--format",
-        choices=["stl", "3mf"],
-        default="stl",
-        help="Output file format when --output is omitted. Default: stl.",
-    )
-    parser.add_argument(
-        "--output",
-        type=Path,
-        default=None,
-        help="Output path. If omitted, a deterministic filename is used in the current directory.",
-    )
-    return parser
-
-
 def build_parser() -> argparse.ArgumentParser:
-    """Build the CLI parser for the chopping-board bin command (public alias)."""
-    return _build_chop_parser()
-
-
-def create_parameters(args: argparse.Namespace) -> BinParameters:
-    """Build BinParameters from parsed CLI arguments (public alias)."""
-    return BinParameters(
-        grid_length_units=args.grid_length,
-        grid_width_units=args.grid_width,
-        bin_height_mm=args.height_mm,
-        chop_length_mm=args.chop_length_mm,
-        chop_width_mm=args.chop_width_mm,
-        chop_corner_radius_mm=args.chop_corner_radius_mm,
-        base_corner_radius_mm=args.base_corner_radius_mm,
-        cutout_offset_from_edge_mm=args.cutout_offset_mm,
-        cutout_radius_mm=args.cutout_radius_mm,
-    )
-
-
-def default_output_path(params: BinParameters, fmt: str = "stl") -> Path:
-    """Build a deterministic default output path for the generated chop bin."""
-    height_token = f"{params.bin_height_mm:g}".replace(".", "p")
-    file_name = f"chop_bin_{params.grid_length_units}x{params.grid_width_units}_h{height_token}.{fmt}"
-    return Path.cwd() / file_name
-
-
-def _run_chop_bin(argv: list[str] | None = None) -> int:
-    """Parse arguments, build, export a chop bin, and return a process exit code."""
-    parser = _build_chop_parser()
-    args = parser.parse_args(argv)
-
-    try:
-        params = create_parameters(args)
-        params.validate()
-        output_path = args.output if args.output is not None else default_output_path(params, args.format)
-        if not output_path.parent.exists():
-            msg = f"Output directory does not exist: {output_path.parent}"
-            raise FileNotFoundError(msg)
-        part = create_chop_bin(params)
-        exported_file = export_bin(part, output_path)
-    except (ValueError, FileNotFoundError) as exc:
-        print(f"Error: {exc}")
-        return 2
-    except OSError as exc:
-        print(f"Error: Failed to write output: {exc}")
-        return 2
-
-    print(f"Exported: {exported_file}")
-    return 0
-
-
-# ---------------------------------------------------------------------------
-# Utensil bin
-# ---------------------------------------------------------------------------
-
-
-def _build_utensil_parser() -> argparse.ArgumentParser:
-    """Build the argument parser for the utensil-bin sub-command."""
+    """Build the CLI parser for kitchen/cutlery bin generation."""
     parser = argparse.ArgumentParser(
-        description="Generate a Gridfinity-compatible open-top utensil bin as STL or 3MF.",
+        description="Generate a Gridfinity-compatible kitchen or cutlery bin as STL or 3MF.",
     )
-    defaults = UtensilBinParameters()
-    parser.add_argument("--grid-x", type=int, default=defaults.grid_x)
-    parser.add_argument("--grid-y", type=int, default=defaults.grid_y)
+    parser.add_argument(
+        "--preset",
+        default=None,
+        help=f"Seed parameters from a named preset: {', '.join(preset_names())}.",
+    )
+    parser.add_argument("--grid-x", type=int, default=None)
+    parser.add_argument("--grid-y", type=int, default=None)
     height_group = parser.add_mutually_exclusive_group()
     height_group.add_argument(
         "--height-units",
         type=int,
-        default=defaults.height_in_units,
-        help="Height in Gridfinity units (multiples of 7 mm). Default: 7.",
+        default=None,
+        help="Height in Gridfinity units (7 mm each). Mutually exclusive with --height-mm.",
     )
     height_group.add_argument(
         "--height-mm",
@@ -132,9 +51,27 @@ def _build_utensil_parser() -> argparse.ArgumentParser:
         default=None,
         help="Freeform height in mm. Mutually exclusive with --height-units.",
     )
-    parser.add_argument("--div-x", type=int, default=defaults.div_x)
-    parser.add_argument("--div-y", type=int, default=defaults.div_y)
-    parser.add_argument("--wall-thickness-mm", type=float, default=defaults.wall_thickness_mm)
+    parser.add_argument("--pocket-length-mm", type=float, default=None)
+    parser.add_argument("--pocket-width-mm", type=float, default=None)
+    parser.add_argument("--pocket-corner-radius-mm", type=float, default=None)
+    parser.add_argument("--base-corner-radius-mm", type=float, default=None)
+    parser.add_argument("--cutout-offset-mm", type=float, default=None)
+    parser.add_argument("--cutout-radius-mm", type=float, default=None)
+    parser.add_argument(
+        "--no-cutouts",
+        action="store_const",
+        const=False,
+        default=None,
+        dest="cutouts_enabled",
+        help="Disable the side cutouts and leave the walls (and any dividers) solid.",
+    )
+    parser.add_argument(
+        "--divisions",
+        type=int,
+        default=None,
+        help="Split the pocket into this many equal columns; 2 or more produces a CutleryBin.",
+    )
+    parser.add_argument("--divider-thickness-mm", type=float, default=None)
     parser.add_argument("--bed-x", type=float, default=None, help="Print bed X dimension in mm.")
     parser.add_argument("--bed-y", type=float, default=None, help="Print bed Y dimension in mm.")
     parser.add_argument(
@@ -152,53 +89,59 @@ def _build_utensil_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _utensil_params_from_args(args: argparse.Namespace) -> UtensilBinParameters:
-    """Build UtensilBinParameters from parsed utensil-bin CLI arguments."""
-    if args.height_mm is not None:
-        return UtensilBinParameters(
-            grid_x=args.grid_x,
-            grid_y=args.grid_y,
-            height_in_units=None,
-            height_mm=args.height_mm,
-            div_x=args.div_x,
-            div_y=args.div_y,
-            wall_thickness_mm=args.wall_thickness_mm,
-        )
-    return UtensilBinParameters(
-        grid_x=args.grid_x,
-        grid_y=args.grid_y,
-        height_in_units=args.height_units,
-        height_mm=None,
-        div_x=args.div_x,
-        div_y=args.div_y,
-        wall_thickness_mm=args.wall_thickness_mm,
-    )
+def create_parameters(args: argparse.Namespace) -> BinParameters:
+    """Build BinParameters from parsed CLI arguments, layering overrides on any preset."""
+    params = resolve_preset(args.preset) if args.preset else BinParameters()
+
+    simple = {
+        "grid_x": args.grid_x,
+        "grid_y": args.grid_y,
+        "pocket_length_mm": args.pocket_length_mm,
+        "pocket_width_mm": args.pocket_width_mm,
+        "pocket_corner_radius_mm": args.pocket_corner_radius_mm,
+        "base_corner_radius_mm": args.base_corner_radius_mm,
+        "cutout_offset_from_edge_mm": args.cutout_offset_mm,
+        "cutout_radius_mm": args.cutout_radius_mm,
+        "cutouts_enabled": args.cutouts_enabled,
+        "divisions": args.divisions,
+        "divider_thickness_mm": args.divider_thickness_mm,
+    }
+    overrides = {key: value for key, value in simple.items() if value is not None}
+
+    if args.height_units is not None:
+        overrides["height_in_units"] = args.height_units
+        overrides["height_mm"] = None
+    elif args.height_mm is not None:
+        overrides["height_mm"] = args.height_mm
+        overrides["height_in_units"] = None
+
+    return replace(params, **overrides)
 
 
-def default_utensil_output_path(params: UtensilBinParameters, fmt: str = "stl") -> Path:
-    """Build a deterministic default output path for the generated utensil bin."""
+def default_output_path(params: BinParameters, fmt: str = "stl") -> Path:
+    """Build a deterministic default output path for the generated bin."""
+    kind = "cutlery_bin" if params.divisions >= 2 else "kitchen_bin"
     height_token = f"{params.effective_height_mm:g}".replace(".", "p")
-    file_name = f"utensil_bin_{params.grid_x}x{params.grid_y}_h{height_token}.{fmt}"
+    file_name = f"{kind}_{params.grid_x}x{params.grid_y}_h{height_token}.{fmt}"
     return Path.cwd() / file_name
 
 
-def _run_utensil_bin(argv: list[str] | None = None) -> int:
-    """Parse arguments, build, export a utensil bin, and return a process exit code."""
-    parser = _build_utensil_parser()
+def main(argv: list[str] | None = None) -> int:
+    """Parse arguments, build, and export a bin; return a process exit code."""
+    parser = build_parser()
     args = parser.parse_args(argv)
 
     try:
-        params = _utensil_params_from_args(args)
+        params = create_parameters(args)
         params.validate()
-        output_path = args.output if args.output is not None else default_utensil_output_path(params, args.format)
+        output_path = args.output if args.output is not None else default_output_path(params, args.format)
         if not output_path.parent.exists():
             msg = f"Output directory does not exist: {output_path.parent}"
             raise FileNotFoundError(msg)
         if args.bed_x is not None and args.bed_y is not None:
-            warnings = check_print_bed(params.grid_x, params.grid_y, args.bed_x, args.bed_y)
-            for warning in warnings:
+            for warning in check_print_bed(params.grid_x, params.grid_y, args.bed_x, args.bed_y):
                 print(f"Warning: {warning}", file=sys.stderr)
-        part = create_utensil_bin(params)
+        part = create_cutlery_bin(params) if params.divisions >= 2 else create_kitchen_bin(params)
         exported_file = export_bin(part, output_path)
     except (ValueError, FileNotFoundError) as exc:
         print(f"Error: {exc}")
@@ -209,19 +152,6 @@ def _run_utensil_bin(argv: list[str] | None = None) -> int:
 
     print(f"Exported: {exported_file}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
-
-
-def main(argv: list[str] | None = None) -> int:
-    """Route to the chop-bin or utensil-bin handler and return a process exit code."""
-    args_list: list[str] = argv if argv is not None else sys.argv[1:]
-    if args_list and args_list[0] == "utensil-bin":
-        return _run_utensil_bin(args_list[1:])
-    return _run_chop_bin(args_list)
 
 
 if __name__ == "__main__":

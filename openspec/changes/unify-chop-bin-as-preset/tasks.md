@@ -33,18 +33,18 @@
 
 ## 5. CLI
 
-- [ ] 5.1 Replace the chop and `utensil-bin` parsers in `main.py` with a single preset-oriented parser: `--preset`,
+- [x] 5.1 Replace the chop and `utensil-bin` parsers in `main.py` with a single preset-oriented parser: `--preset`,
   dimension/pocket overrides, a divisions option, `--no-cutouts`, and the existing `--format`/`--output`.
-- [ ] 5.2 Wire behaviour: plain invocation → default `KitchenBin`; `divisions >= 2` → `CutleryBin`;
+- [x] 5.2 Wire behaviour: plain invocation → default `KitchenBin`; `divisions >= 2` → `CutleryBin`;
   `--preset chop-board` → chop bin; unknown preset → exit code 2 with actionable text.
-- [ ] 5.3 Update the default output filename logic for the new bins and presets.
+- [x] 5.3 Update the default output filename logic for the new bins and presets.
 
 ## 6. Retire and consolidate
 
-- [ ] 6.1 Delete `chop_bin.py`; ensure its geometry and defaults live in `cutlery_bin.py` / the `chop-board` preset.
-- [ ] 6.2 Retire the `CompartmentsEqual`-based bin in `utensil_bin.py`, moving `check_print_bed` alongside the new
+- [x] 6.1 Delete `chop_bin.py`; ensure its geometry and defaults live in `cutlery_bin.py` / the `chop-board` preset.
+- [x] 6.2 Retire the `CompartmentsEqual`-based bin in `utensil_bin.py`, moving `check_print_bed` alongside the new
   bin (or into a shared module).
-- [ ] 6.3 Update all imports across `main.py` and `tests/`.
+- [x] 6.3 Update all imports across `main.py` and `tests/`.
 
 ## 7. Tests
 
@@ -59,16 +59,16 @@
 - [x] 7.5 Test `cutouts_enabled` default-on, `False` → solid walls/dividers, and fit validation only fires when
   enabled.
 - [x] 7.6 Test the `chop-board` preset reproduces the prior chop bin within tolerance (volume/bbox).
-- [ ] 7.7 Test preset resolution (unknown raises; override applies) and CLI behaviour (`--preset chop-board`, plain
+- [x] 7.7 Test preset resolution (unknown raises; override applies) and CLI behaviour (`--preset chop-board`, plain
   invocation, divisions → `CutleryBin`, unknown preset → exit 2).
 - [x] 7.8 Test validation rejections: grid range, pocket-too-large, invalid divisions.
 
 ## 8. Verification and UAT
 
-- [ ] 8.1 Run `uv run ruff check .` and fix findings.
-- [ ] 8.2 Run `uv run pytest` and confirm the full suite passes.
+- [x] 8.1 Run `uv run ruff check .` and fix findings.
+- [x] 8.2 Run `uv run pytest` and confirm the full suite passes.
 - [ ] 8.3 UAT: generate a default `KitchenBin`, the `chop-board` preset, a multi-division `CutleryBin`,
   `--no-cutouts`, and a too-small-cutout error case; eyeball the exported STLs.
-- [ ] 8.4 Update `README.md` for the preset-oriented CLI and the `KitchenBin`/`CutleryBin` model; note the changed
+- [x] 8.4 Update `README.md` for the preset-oriented CLI and the `KitchenBin`/`CutleryBin` model; note the changed
   default behaviour.
 - [ ] 8.5 Archive the change so the spec deltas fold into `openspec/specs/`.
