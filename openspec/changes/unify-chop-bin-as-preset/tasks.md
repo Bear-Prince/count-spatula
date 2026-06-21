@@ -67,7 +67,7 @@
 
 - [x] 8.1 Run `uv run ruff check .` and fix findings.
 - [x] 8.2 Run `uv run pytest` and confirm the full suite passes.
-- [ ] 8.3 UAT: generate a default `KitchenBin`, the `chop-board` preset, a multi-division `CutleryBin`,
+- [x] 8.3 UAT: generate a default `KitchenBin`, the `chop-board` preset, a multi-division `CutleryBin`,
   `--no-cutouts`, and a too-small-cutout error case; eyeball the exported STLs.
 - [x] 8.4 Update `README.md` for the preset-oriented CLI and the `KitchenBin`/`CutleryBin` model; note the changed
   default behaviour.
