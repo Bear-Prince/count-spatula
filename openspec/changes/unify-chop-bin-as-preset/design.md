@@ -39,10 +39,13 @@ cutouts. That becomes the base bin; a cutlery tray is that bin with straight div
   *Alternative:* one class with an optional `divisions` field — rejected, the two named types better express the
   domain and keep `KitchenBin` free of divider concerns. *Acceptance:* a `CutleryBin(divisions=1)` is geometrically
   identical to a `KitchenBin`; `divisions≥2` adds attached dividers with the cutout running through.
-- **Pocket-only base, no `CompartmentsEqual`.** `KitchenBin` has an explicit pocket (length, width, corner radius);
-  a "plain" bin is just a pocket sized near the footprint. We do not wrap `gridfinity_build123d`'s `CompartmentsEqual`
-  at all; `CutleryBin` dividers are hand-built straight walls inside our own pocket. *Acceptance:* the pocket yields
-  non-uniform end/side walls; no generic grid capability is exposed.
+- **Pocket base with a wall-thickness default, no `CompartmentsEqual`.** A `KitchenBin` has a single pocket. By
+  default it is derived from a uniform `wall_thickness_mm` (default 2 mm) — so a plain bin has even 2 mm walls — and
+  it can instead be given explicit length/width/corner-radius for non-uniform walls (the `chop-board` preset). The
+  generic default is a `2×4`, 8-height-unit bin; it is **not** the chop bin. We do not wrap
+  `gridfinity_build123d`'s `CompartmentsEqual`; `CutleryBin` dividers are hand-built straight walls inside our own
+  pocket. *Acceptance:* the default bin has uniform 2 mm walls and a `2×4` footprint; an explicit pocket yields
+  non-uniform walls; no generic grid capability is exposed.
 - **Single `BinParameters`, standard Gridfinity orientation.** One parameter dataclass carrying grid size, height,
   base corner radius, pocket dimensions, and the cutout fields; `CutleryBin` adds `divisions` and a divider
   thickness. Use `grid_x`/`grid_y` (matching `BaseEqual`) rather than the chop bin's length/width swap.
@@ -93,6 +96,8 @@ All within one PR. Rollback is reverting the PR.
 ## Open Questions
 
 - **Resolved:** plain-bin cutout default → enabled, full-height; module/class names → `cutlery_bin.py`,
-  `KitchenBin`, `CutleryBin`; generic compartments → deferred to `gridfinity_build123d`.
+  `KitchenBin`, `CutleryBin`; generic compartments → deferred to `gridfinity_build123d`; default footprint →
+  `2×4`, 8 height units, uniform 2 mm walls (informed by the user's real bin collection); `chop-board` carries the
+  explicit chop pocket (it is no longer the default).
 - Exact divider thickness default for `CutleryBin` — reasonable default chosen in implementation (matches the
   former utensil wall thickness); confirm at review if it matters.

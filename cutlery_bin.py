@@ -26,6 +26,7 @@ from build123d import (
     Locations,
     Mode,
     Plane,
+    Rectangle,
     RectangleRounded,
     RotationLike,
     add,
@@ -39,12 +40,19 @@ GRIDFINITY_PITCH_MM = 42 * MM  # Standard Gridfinity grid pitch in mm per unit.
 GRIDFINITY_HEIGHT_UNIT_MM = 7 * MM  # Millimetres per Gridfinity height unit.
 BASE_CORNER_RADIUS = 7.5 / 2 * MM  # mm
 
-# Defaults reproduce the original chopping-board bin so the chop-board preset matches it exactly.
-DEFAULT_POCKET_LENGTH = 220 * MM  # mm, along the Y axis.
-DEFAULT_POCKET_WIDTH = 160 * MM  # mm, along the X axis.
-DEFAULT_POCKET_CORNER_RADIUS = 35 * MM  # mm
-DEFAULT_CUTOUT_OFFSET = 75 * MM  # mm from the outer Y edge to the edge of the cutout.
+# Generic defaults: a 2x4, 8-unit bin with uniform 2 mm walls (a plain kitchen bin, not the chop bin).
+DEFAULT_WALL_THICKNESS = 2 * MM  # mm; uniform wall thickness used to derive the default pocket.
+DEFAULT_CUTOUT_OFFSET = 40 * MM  # mm from the outer Y edge to the edge of the cutout (tunable starting point).
 DEFAULT_CUTOUT_RADIUS = 12.5 * MM  # mm radius of the side cutout arc.
+
+# The chop-board preset reproduces the original chopping-board bin: an explicit, non-uniform-wall pocket.
+CHOP_GRID_X = 4
+CHOP_GRID_Y = 6
+CHOP_HEIGHT_UNITS = 8
+CHOP_POCKET_LENGTH = 220 * MM
+CHOP_POCKET_WIDTH = 160 * MM
+CHOP_POCKET_CORNER_RADIUS = 35 * MM
+CHOP_CUTOUT_OFFSET = 75 * MM
 
 
 @dataclass(slots=True)
@@ -56,14 +64,15 @@ class BinParameters:
     span the Y axis, so their fit is constrained by ``grid_y``.
     """
 
-    grid_x: int = 4
-    grid_y: int = 6
-    height_in_units: int | None = None
-    height_mm: float | None = 56.0
+    grid_x: int = 2
+    grid_y: int = 4
+    height_in_units: int | None = 8
+    height_mm: float | None = None
     base_corner_radius_mm: float = BASE_CORNER_RADIUS
-    pocket_length_mm: float = DEFAULT_POCKET_LENGTH
-    pocket_width_mm: float = DEFAULT_POCKET_WIDTH
-    pocket_corner_radius_mm: float = DEFAULT_POCKET_CORNER_RADIUS
+    wall_thickness_mm: float = DEFAULT_WALL_THICKNESS
+    pocket_length_mm: float | None = None
+    pocket_width_mm: float | None = None
+    pocket_corner_radius_mm: float = 0.0
     cutout_offset_from_edge_mm: float = DEFAULT_CUTOUT_OFFSET
     cutout_radius_mm: float = DEFAULT_CUTOUT_RADIUS
     cutouts_enabled: bool = True
@@ -76,6 +85,20 @@ class BinParameters:
         if self.height_mm is not None:
             return self.height_mm
         return (self.height_in_units or 0) * GRIDFINITY_HEIGHT_UNIT_MM
+
+    @property
+    def effective_pocket_length_mm(self) -> float:
+        """Pocket length along Y; derived from the wall thickness when not given explicitly."""
+        if self.pocket_length_mm is not None:
+            return self.pocket_length_mm
+        return self.grid_y * GRIDFINITY_PITCH_MM - 2 * self.wall_thickness_mm
+
+    @property
+    def effective_pocket_width_mm(self) -> float:
+        """Pocket width along X; derived from the wall thickness when not given explicitly."""
+        if self.pocket_width_mm is not None:
+            return self.pocket_width_mm
+        return self.grid_x * GRIDFINITY_PITCH_MM - 2 * self.wall_thickness_mm
 
     @property
     def side_half_length_mm(self) -> float:
@@ -108,19 +131,24 @@ class BinParameters:
         elif not 7.0 < self.effective_height_mm <= 200.0:
             errors.append("effective height must be greater than 7 mm and at most 200 mm")
 
-        if self.pocket_length_mm <= 0:
-            errors.append("pocket_length_mm must be greater than 0")
-        if self.pocket_width_mm <= 0:
-            errors.append("pocket_width_mm must be greater than 0")
+        if self.wall_thickness_mm <= 0:
+            errors.append("wall_thickness_mm must be greater than 0")
+
+        pocket_length = self.effective_pocket_length_mm
+        pocket_width = self.effective_pocket_width_mm
+        if pocket_length <= 0:
+            errors.append("pocket length must be greater than 0 (check grid_y and wall_thickness_mm)")
+        if pocket_width <= 0:
+            errors.append("pocket width must be greater than 0 (check grid_x and wall_thickness_mm)")
 
         max_outer_length = self.grid_y * GRIDFINITY_PITCH_MM
         max_outer_width = self.grid_x * GRIDFINITY_PITCH_MM
-        if self.pocket_length_mm >= max_outer_length:
-            errors.append("pocket_length_mm must be smaller than the outer bin length")
-        if self.pocket_width_mm >= max_outer_width:
-            errors.append("pocket_width_mm must be smaller than the outer bin width")
+        if pocket_length >= max_outer_length:
+            errors.append("pocket length must be smaller than the outer bin length")
+        if pocket_width >= max_outer_width:
+            errors.append("pocket width must be smaller than the outer bin width")
 
-        max_pocket_corner = min(self.pocket_length_mm, self.pocket_width_mm) / 2
+        max_pocket_corner = min(pocket_length, pocket_width) / 2
         if not 0 <= self.pocket_corner_radius_mm <= max_pocket_corner:
             errors.append("pocket_corner_radius_mm must be between 0 and half of the smaller pocket dimension")
 
@@ -185,6 +213,21 @@ class SideCutoutProfile(BaseSketchObject):
         super().__init__(profile.face(), rotation, align, mode)
 
 
+def _rounded_panel(
+    width: float,
+    height: float,
+    radius: float,
+    *,
+    mode: Mode = Mode.ADD,
+    align: tuple[Align, Align] = (Align.CENTER, Align.CENTER),
+) -> None:
+    """Add a rectangle to the active sketch, rounded when radius > 0 and sharp when it is 0."""
+    if radius > 0:
+        RectangleRounded(width=width, height=height, radius=radius, mode=mode, align=align)
+    else:
+        Rectangle(width=width, height=height, mode=mode, align=align)
+
+
 class KitchenBin(BasePartObject):
     """A Gridfinity bin with an explicitly-sized rounded pocket and optional side cutouts."""
 
@@ -209,18 +252,16 @@ class KitchenBin(BasePartObject):
             floor_z = base_top.center().Z
 
             with BuildSketch(base_top) as wall_sketch:
-                RectangleRounded(
-                    width=params.grid_x * GRIDFINITY_PITCH_MM,
-                    height=params.grid_y * GRIDFINITY_PITCH_MM,
-                    radius=params.base_corner_radius_mm,
-                    align=(Align.CENTER, Align.CENTER),
+                _rounded_panel(
+                    params.grid_x * GRIDFINITY_PITCH_MM,
+                    params.grid_y * GRIDFINITY_PITCH_MM,
+                    params.base_corner_radius_mm,
                 )
-                RectangleRounded(
-                    width=params.pocket_width_mm,
-                    height=params.pocket_length_mm,
-                    radius=params.pocket_corner_radius_mm,
+                _rounded_panel(
+                    params.effective_pocket_width_mm,
+                    params.effective_pocket_length_mm,
+                    params.pocket_corner_radius_mm,
                     mode=Mode.SUBTRACT,
-                    align=(Align.CENTER, Align.CENTER),
                 )
 
             extrude(to_extrude=wall_sketch.face(), amount=height)
@@ -263,16 +304,18 @@ class CutleryBin(KitchenBin):
         """Add straight dividers parallel to the cut walls, splitting the pocket into equal columns."""
         if params.divisions < 2:
             return
-        column_pitch = params.pocket_width_mm / params.divisions
+        pocket_width = params.effective_pocket_width_mm
+        pocket_length = params.effective_pocket_length_mm
+        column_pitch = pocket_width / params.divisions
         height = top_z - floor_z
         # Dividers sit at evenly spaced X positions inside the pocket, span the full pocket length
         # (attaching to both un-cut walls), and rise from the inner floor to the top.
         for index in range(1, params.divisions):
-            x = -params.pocket_width_mm / 2 + index * column_pitch
+            x = -pocket_width / 2 + index * column_pitch
             with Locations((x, 0, floor_z)):
                 Box(
                     params.divider_thickness_mm,
-                    params.pocket_length_mm,
+                    pocket_length,
                     height,
                     align=(Align.CENTER, Align.CENTER, Align.MIN),
                 )
@@ -314,8 +357,16 @@ def check_print_bed(grid_x: int, grid_y: int, bed_x_mm: float, bed_y_mm: float) 
 
 # Named presets: each returns a fully-populated BinParameters.
 def _chop_board_preset() -> BinParameters:
-    """Reproduce the original chopping-board bin as a KitchenBin."""
-    return BinParameters()
+    """Reproduce the original chopping-board bin as a KitchenBin (explicit, non-uniform-wall pocket)."""
+    return BinParameters(
+        grid_x=CHOP_GRID_X,
+        grid_y=CHOP_GRID_Y,
+        height_in_units=CHOP_HEIGHT_UNITS,
+        pocket_length_mm=CHOP_POCKET_LENGTH,
+        pocket_width_mm=CHOP_POCKET_WIDTH,
+        pocket_corner_radius_mm=CHOP_POCKET_CORNER_RADIUS,
+        cutout_offset_from_edge_mm=CHOP_CUTOUT_OFFSET,
+    )
 
 
 PRESETS: dict[str, Callable[[], BinParameters]] = {

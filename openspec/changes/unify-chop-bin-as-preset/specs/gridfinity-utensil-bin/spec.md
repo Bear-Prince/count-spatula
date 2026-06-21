@@ -3,9 +3,9 @@
 ### Requirement: Parametric Gridfinity utensil bin geometry
 
 The system SHALL generate Gridfinity-compatible open-top bin geometry from validated parameters as a
-`KitchenBin`: a Gridfinity base, open-top walls up to the bin height, a single explicitly-sized rounded
-pocket, and optional side cutouts. The system SHALL NOT provide generic equal-compartment grids; those
-are deferred to `gridfinity_build123d`.
+`KitchenBin`: a Gridfinity base, open-top walls up to the bin height, a single rounded pocket (derived from
+a uniform wall thickness by default, or given explicit dimensions), and optional side cutouts. The system
+SHALL NOT provide generic equal-compartment grids; those are deferred to `gridfinity_build123d`.
 
 #### Scenario: Generate a KitchenBin from explicit valid parameters
 
@@ -15,7 +15,8 @@ are deferred to `gridfinity_build123d`.
 #### Scenario: Generate geometry from defaults
 
 - **WHEN** a user omits optional parameters
-- **THEN** the system applies documented defaults and produces a valid `KitchenBin` with side cutouts enabled
+- **THEN** the system applies the documented defaults (a 2×4 grid, 8 height units, uniform 2 mm walls) and
+  produces a valid `KitchenBin` with side cutouts enabled
 
 ### Requirement: Parameter validation for printable geometry
 
@@ -40,14 +41,21 @@ enabled side cutouts, and (for a `CutleryBin`) the divider count and thickness.
 
 ## ADDED Requirements
 
-### Requirement: Explicitly-sized pocket interior
+### Requirement: Pocket interior
 
-A `KitchenBin` SHALL have a single interior pocket of an explicitly specified length, width, and corner
-radius, independent of a uniform wall thickness, so the end and side walls may differ in thickness.
+A `KitchenBin` SHALL have a single interior rounded pocket. By default the pocket is derived from a uniform
+`wall_thickness_mm` (default 2 mm), producing equal walls. The pocket MAY instead be given explicit length,
+width, and corner radius, independent of any uniform wall thickness, so the end and side walls may differ —
+as the `chop-board` preset does.
 
-#### Scenario: Pocket sized independently of wall thickness
+#### Scenario: Default pocket derived from wall thickness
 
-- **WHEN** a pocket of 220 mm × 160 mm with a 35 mm corner radius is requested on a 6×4 grid
+- **WHEN** a bin is generated with default parameters (no explicit pocket dimensions)
+- **THEN** the pocket is the footprint inset by the wall thickness on every side, giving uniform walls
+
+#### Scenario: Explicit pocket with non-uniform walls
+
+- **WHEN** a pocket of 220 mm × 160 mm with a 35 mm corner radius is requested on the chop grid
 - **THEN** the bin has an interior opening of those dimensions, with end and side walls of differing thickness
 
 ### Requirement: CutleryBin dividers
