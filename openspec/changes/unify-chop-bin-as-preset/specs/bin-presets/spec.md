@@ -5,12 +5,19 @@
 The system SHALL provide named presets, each producing a fully-populated, valid set of bin parameters, so
 common bins can be generated without specifying every dimension. The system SHALL ship a `chop-board`
 preset: a `KitchenBin` reproducing the chopping-board bin — an explicit 220 mm × 160 mm pocket with a
-35 mm corner radius, side cutouts enabled, on the established chop grid and height.
+35 mm corner radius, side cutouts enabled, on the established chop grid and height. A preset MAY mark its
+side cutouts as required; disabling them SHALL then be rejected. The `chop-board` preset requires cutouts,
+because without them the board is trapped in the pocket.
 
 #### Scenario: Generate a bin from a preset
 
 - **WHEN** a user selects the `chop-board` preset
 - **THEN** the system produces a `KitchenBin` equivalent to the previous chopping-board bin geometry
+
+#### Scenario: Disabling cutouts on a cutouts-required preset is rejected
+
+- **WHEN** a user selects the `chop-board` preset and also disables side cutouts
+- **THEN** the system reports an actionable error and does not generate a bin
 
 #### Scenario: Reject an unknown preset
 

@@ -369,8 +369,17 @@ def _chop_board_preset() -> BinParameters:
     )
 
 
-PRESETS: dict[str, Callable[[], BinParameters]] = {
-    "chop-board": _chop_board_preset,
+@dataclass(frozen=True)
+class Preset:
+    """A named preset: a parameter factory plus whether side cutouts are mandatory for it."""
+
+    factory: Callable[[], BinParameters]
+    cutouts_required: bool = False
+
+
+# The chop-board preset requires cutouts: without them the chopping board is trapped in the pocket.
+PRESETS: dict[str, Preset] = {
+    "chop-board": Preset(_chop_board_preset, cutouts_required=True),
 }
 
 
@@ -379,12 +388,20 @@ def preset_names() -> list[str]:
     return sorted(PRESETS)
 
 
-def resolve_preset(name: str) -> BinParameters:
-    """Return the parameters for a named preset, or raise with the available names."""
+def _get_preset(name: str) -> Preset:
     try:
-        factory = PRESETS[name]
+        return PRESETS[name]
     except KeyError:
         available = ", ".join(preset_names())
         msg = f"Unknown preset '{name}'. Available presets: {available}"
         raise ValueError(msg) from None
-    return factory()
+
+
+def resolve_preset(name: str) -> BinParameters:
+    """Return the parameters for a named preset, or raise with the available names."""
+    return _get_preset(name).factory()
+
+
+def preset_requires_cutouts(name: str) -> bool:
+    """Return whether the named preset forbids disabling its side cutouts."""
+    return _get_preset(name).cutouts_required

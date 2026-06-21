@@ -111,6 +111,14 @@ def test_cli_default_naming_uses_3mf_with_format_flag(monkeypatch: pytest.Monkey
     assert any(p.suffix == ".3mf" for p in tmp_path.iterdir())
 
 
+def test_cli_no_cutouts_rejected_for_chop_board(capsys: pytest.CaptureFixture[str]) -> None:
+    """Disabling cutouts on the chop-board preset is a footgun and must be rejected."""
+    exit_code = main.main(["--preset", "chop-board", "--no-cutouts"])
+    output = capsys.readouterr()
+    assert exit_code == 2
+    assert "cannot be disabled" in output.out
+
+
 def test_cli_unknown_preset_returns_non_zero(capsys: pytest.CaptureFixture[str]) -> None:
     """An unknown preset name exits non-zero with an actionable message."""
     exit_code = main.main(["--preset", "nope"])

@@ -60,8 +60,10 @@ cutouts. That becomes the base bin; a cutlery tray is that bin with straight div
   reproduces the current chop bin's volume/bbox; presets are listable.
 - **CLI redesigned around presets and bin type.** A single entry takes `--preset <name>` (seeds defaults) plus
   overrides; a division count of ≥2 produces a `CutleryBin`, otherwise a `KitchenBin`. The chop default and the
-  `utensil-bin` sub-command are removed. *Acceptance:* `--preset chop-board` reproduces chop output; an unknown
-  preset exits non-zero. Exact flag surface is part of this design's review.
+  `utensil-bin` sub-command are removed. `--no-cutouts` is supported for generic bins but rejected for presets that
+  mark cutouts as required (the `chop-board` preset), since a chop bin without cutouts traps the board.
+  *Acceptance:* `--preset chop-board` reproduces chop output; `--preset chop-board --no-cutouts` exits non-zero; an
+  unknown preset exits non-zero.
 - **Module/class naming.** Host the unified geometry in `cutlery_bin.py` with classes `KitchenBin` and
   `CutleryBin`, and `SideCutoutProfile`. Retire `chop_bin.py` and the generic pieces of `utensil_bin.py` (retain
   `check_print_bed`). The `gridfinity-utensil-bin` capability spec keeps its legacy name (OpenSpec has no capability

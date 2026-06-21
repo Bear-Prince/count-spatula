@@ -14,6 +14,7 @@ from cutlery_bin import (
     create_cutlery_bin,
     create_kitchen_bin,
     preset_names,
+    preset_requires_cutouts,
     resolve_preset,
 )
 
@@ -115,7 +116,16 @@ def create_parameters(args: argparse.Namespace) -> BinParameters:
         overrides["height_mm"] = args.height_mm
         overrides["height_in_units"] = None
 
-    return replace(params, **overrides)
+    result = replace(params, **overrides)
+
+    if args.preset and preset_requires_cutouts(args.preset) and not result.cutouts_enabled:
+        msg = (
+            f"Side cutouts cannot be disabled for the '{args.preset}' preset; "
+            "without them the contents are trapped."
+        )
+        raise ValueError(msg)
+
+    return result
 
 
 def default_output_path(params: BinParameters, fmt: str = "stl") -> Path:
