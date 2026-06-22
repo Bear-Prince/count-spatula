@@ -71,4 +71,4 @@
   `--no-cutouts`, and a too-small-cutout error case; eyeball the exported STLs.
 - [x] 8.4 Update `README.md` for the preset-oriented CLI and the `KitchenBin`/`CutleryBin` model; note the changed
   default behaviour.
-- [ ] 8.5 Archive the change so the spec deltas fold into `openspec/specs/`.
+- [x] 8.5 Archive the change so the spec deltas fold into `openspec/specs/`.
