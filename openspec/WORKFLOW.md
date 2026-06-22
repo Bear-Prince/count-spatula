@@ -98,6 +98,10 @@ to see real progress (for example, `1/4 artifacts`); `validate` measures complet
 - **Transcribe learnings forward.** When you abandon or supersede, copy the "why" into the replacement. The tool will
   not preserve it for you.
 - **Keep changes small.** Small changes are cheap to abandon, which is what makes course-correction painless.
+- **Generate the UAT models before archiving.** Geometry output can't be fully judged by the test suite, so each
+  change's verification/UAT task group must regenerate the affected bins (the `UAT.md` cases) to `build/` for
+  slicer review. Order this step *before* the archive step (and before any push/PR), so the bins are eyeballed
+  while the change is still active.
 - **Renaming a change is manual.** The change name, its directory, and the branch are coupled only by convention.
   To rename: `git mv openspec/changes/<old> openspec/changes/<new>`, update any cross-references inside the
   artifacts, and rename the branch to match. There is no CLI command for this.
