@@ -39,6 +39,7 @@ from gridfinity_build123d import BaseEqual
 GRIDFINITY_PITCH_MM = 42 * MM  # Standard Gridfinity grid pitch in mm per unit.
 GRIDFINITY_HEIGHT_UNIT_MM = 7 * MM  # Millimetres per Gridfinity height unit.
 BASE_CORNER_RADIUS = 7.5 / 2 * MM  # mm
+GRIDFINITY_CLEARANCE_MM = 0.5 * MM  # Total per-axis footprint clearance (bin = N*42 - 0.5, per the GridFinity spec).
 
 # Generic defaults: a 2x4, 8-unit bin with uniform 2 mm walls (a plain kitchen bin, not the chop bin).
 DEFAULT_WALL_THICKNESS = 2 * MM  # mm; uniform wall thickness used to derive the default pocket.
@@ -91,14 +92,14 @@ class BinParameters:
         """Pocket length along Y; derived from the wall thickness when not given explicitly."""
         if self.pocket_length_mm is not None:
             return self.pocket_length_mm
-        return self.grid_y * GRIDFINITY_PITCH_MM - 2 * self.wall_thickness_mm
+        return self.grid_y * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM - 2 * self.wall_thickness_mm
 
     @property
     def effective_pocket_width_mm(self) -> float:
         """Pocket width along X; derived from the wall thickness when not given explicitly."""
         if self.pocket_width_mm is not None:
             return self.pocket_width_mm
-        return self.grid_x * GRIDFINITY_PITCH_MM - 2 * self.wall_thickness_mm
+        return self.grid_x * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM - 2 * self.wall_thickness_mm
 
     @property
     def side_half_length_mm(self) -> float:
@@ -141,8 +142,8 @@ class BinParameters:
         if pocket_width <= 0:
             errors.append("pocket width must be greater than 0 (check grid_x and wall_thickness_mm)")
 
-        max_outer_length = self.grid_y * GRIDFINITY_PITCH_MM
-        max_outer_width = self.grid_x * GRIDFINITY_PITCH_MM
+        max_outer_length = self.grid_y * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM
+        max_outer_width = self.grid_x * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM
         if pocket_length >= max_outer_length:
             errors.append("pocket length must be smaller than the outer bin length")
         if pocket_width >= max_outer_width:
@@ -253,8 +254,8 @@ class KitchenBin(BasePartObject):
 
             with BuildSketch(base_top) as wall_sketch:
                 _rounded_panel(
-                    params.grid_x * GRIDFINITY_PITCH_MM,
-                    params.grid_y * GRIDFINITY_PITCH_MM,
+                    params.grid_x * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM,
+                    params.grid_y * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM,
                     params.base_corner_radius_mm,
                 )
                 _rounded_panel(

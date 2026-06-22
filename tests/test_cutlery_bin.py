@@ -2,8 +2,10 @@ from dataclasses import replace
 
 import pytest
 from build123d import Box, BuildPart, Location, Mode, add
+from gridfinity_build123d import BaseEqual
 
 from cutlery_bin import (
+    GRIDFINITY_CLEARANCE_MM,
     GRIDFINITY_PITCH_MM,
     BinParameters,
     create_cutlery_bin,
@@ -11,6 +13,14 @@ from cutlery_bin import (
     preset_names,
     resolve_preset,
 )
+
+
+def _base_footprint(grid_x: int, grid_y: int) -> tuple:
+    """Return the (X, Y) footprint of a bare Gridfinity BaseEqual of the given grid."""
+    with BuildPart() as base:
+        add(BaseEqual(grid_x=grid_x, grid_y=grid_y, mode=Mode.ADD))
+    bbox = base.part.bounding_box()
+    return bbox.size.X, bbox.size.Y
 
 
 def _region_volume(solid: object, center: tuple, size: tuple) -> float:
@@ -53,23 +63,31 @@ def test_default_is_a_2x4_thin_walled_bin() -> None:
     params = BinParameters()
     assert (params.grid_x, params.grid_y) == (2, 4)
     assert params.height_in_units == 8
-    # 2 mm walls => pocket = footprint inset by 2 mm on each side.
-    assert params.effective_pocket_width_mm == pytest.approx(2 * GRIDFINITY_PITCH_MM - 4)
-    assert params.effective_pocket_length_mm == pytest.approx(4 * GRIDFINITY_PITCH_MM - 4)
+    # Pocket = the clearanced outer footprint (N*42 - 0.5) inset by 2 mm walls on each side.
+    assert params.effective_pocket_width_mm == pytest.approx(2 * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM - 4)
+    assert params.effective_pocket_length_mm == pytest.approx(4 * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM - 4)
 
 
 def test_default_kitchen_footprint(bins: dict) -> None:
-    """A default KitchenBin has the 2x4 outer footprint."""
+    """A default KitchenBin has the 2x4 outer footprint with the GridFinity 0.5 mm clearance."""
     bbox = bins["default"].bounding_box()
-    assert abs(bbox.size.X - 2 * GRIDFINITY_PITCH_MM) < 1.0
-    assert abs(bbox.size.Y - 4 * GRIDFINITY_PITCH_MM) < 1.0
+    assert abs(bbox.size.X - (2 * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM)) < 0.1
+    assert abs(bbox.size.Y - (4 * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM)) < 0.1
+
+
+def test_wall_outline_matches_base_footprint(bins: dict) -> None:
+    """The bin's outer footprint matches the Gridfinity base it sits on (no overhang)."""
+    base_x, base_y = _base_footprint(2, 4)
+    bbox = bins["default"].bounding_box()
+    assert abs(bbox.size.X - base_x) < 0.2
+    assert abs(bbox.size.Y - base_y) < 0.2
 
 
 def test_chop_board_preset_reproduces_chop_bin(bins: dict) -> None:
     """The chop-board preset is the 4x6 chop bin, distinct from the default."""
     chop_bbox = bins["chop"].bounding_box()
-    assert abs(chop_bbox.size.X - 4 * GRIDFINITY_PITCH_MM) < 1.0
-    assert abs(chop_bbox.size.Y - 6 * GRIDFINITY_PITCH_MM) < 1.0
+    assert abs(chop_bbox.size.X - (4 * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM)) < 0.1
+    assert abs(chop_bbox.size.Y - (6 * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM)) < 0.1
     assert bins["chop"].volume != pytest.approx(bins["default"].volume)
     chop = resolve_preset("chop-board")
     assert (chop.pocket_width_mm, chop.pocket_length_mm) == (160, 220)
