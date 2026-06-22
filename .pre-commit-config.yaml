@@ -13,7 +13,7 @@ repos:
         entry: pnpm exec markdownlint --config .markdownlint.json
         language: system
         files: \.md$
-        exclude: ^(node_modules/|\.github/|openspec/changes/|\.claude/)
+        exclude: ^(node_modules/|\.github/|openspec/changes/|openspec/specs/|\.claude/)
         pass_filenames: true
         stages: [pre-commit]
 

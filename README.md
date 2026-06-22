@@ -30,13 +30,20 @@ Regenerate it with pnpm commands (for example, `pnpm install` or `pnpm install
 
 ## STL / 3MF CLI
 
-Both bin types support STL and 3MF output. Use `--output` to specify the path
-(format is chosen by file extension), or `--format stl|3mf` to set the default
-extension when `--output` is omitted.
+The generator produces a `KitchenBin` (a Gridfinity bin with an explicitly-sized
+rounded pocket and optional full-height side cutouts) or a `CutleryBin` (a
+`KitchenBin` whose pocket is split into equal columns by straight dividers, with
+the cutout running through them). Use `--output` to specify the path (format is
+chosen by file extension), or `--format stl|3mf` to set the default extension
+when `--output` is omitted.
 
-### Chopping-board bin
+Generic equal-compartment grids are out of scope here — use
+[`gridfinity_build123d`](https://github.com/Ruudjhuu/gridfinity_build123d)
+directly for those.
 
-Generate with defaults:
+### KitchenBin (default)
+
+Generate a default bin:
 
 ```bash
 uv run python main.py
@@ -46,13 +53,44 @@ Generate with explicit parameters and a custom output path:
 
 ```bash
 uv run python main.py \
-  --grid-length 6 \
-  --grid-width 4 \
+  --grid-x 4 \
+  --grid-y 6 \
   --height-mm 56 \
-  --chop-length-mm 220 \
-  --chop-width-mm 160 \
-  --output build/chop_bin_custom.stl
+  --pocket-length-mm 220 \
+  --pocket-width-mm 160 \
+  --output build/kitchen_bin_custom.stl
 ```
+
+### Presets
+
+Seed parameters from a named preset (currently `chop-board`, which reproduces the
+original chopping-board bin), overriding any field on top:
+
+```bash
+uv run python main.py --preset chop-board
+uv run python main.py --preset chop-board --grid-x 5 --output build/wide_chop.stl
+```
+
+### CutleryBin (dividers)
+
+Split the pocket into equal columns with `--divisions` (two or more makes a
+`CutleryBin`):
+
+```bash
+uv run python main.py --divisions 4 --output build/cutlery_4.stl
+```
+
+### Disabling cutouts
+
+Side cutouts are enabled by default. When bins sit in a drawer where the notches
+do not line up, disable them with `--no-cutouts` to leave the walls (and any
+dividers) solid:
+
+```bash
+uv run python main.py --no-cutouts
+```
+
+### Other options
 
 Export as 3MF using the default filename:
 
@@ -60,51 +98,11 @@ Export as 3MF using the default filename:
 uv run python main.py --format 3mf
 ```
 
-### Utensil bin
-
-Generate with defaults (2x4 grid, 7 height units, single compartment):
-
-```bash
-uv run python main.py utensil-bin
-```
-
-Generate with Gridfinity height units and multiple compartments:
-
-```bash
-uv run python main.py utensil-bin \
-  --grid-x 2 \
-  --grid-y 4 \
-  --height-units 9 \
-  --div-x 2 \
-  --div-y 1 \
-  --output build/utensil_bin_2x4_2compartments.stl
-```
-
-Generate with a freeform millimetre height:
-
-```bash
-uv run python main.py utensil-bin \
-  --grid-x 1 \
-  --grid-y 3 \
-  --height-mm 120 \
-  --output build/utensil_bin_tall.stl
-```
-
-Export as 3MF:
-
-```bash
-uv run python main.py utensil-bin --format 3mf
-```
-
 Warn when the bin footprint exceeds a print bed (export still proceeds):
 
 ```bash
-uv run python main.py utensil-bin \
-  --grid-x 6 \
-  --grid-y 4 \
-  --bed-x 235 \
-  --bed-y 235
+uv run python main.py --grid-x 6 --grid-y 4 --bed-x 235 --bed-y 235
 ```
 
 The CLI validates parameter ranges and returns a non-zero exit code with
-actionable text when values are invalid.
+actionable text when values are invalid (including an unknown `--preset`).

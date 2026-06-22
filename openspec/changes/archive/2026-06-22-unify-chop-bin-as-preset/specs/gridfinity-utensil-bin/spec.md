@@ -1,12 +1,4 @@
-# gridfinity-utensil-bin Specification
-
-## Purpose
-
-Generate Gridfinity-compatible open-top kitchen utensil bins from validated parameters,
-supporting both Gridfinity-standard and freeform heights and configurable compartment
-divisions, while rejecting parameters that would produce non-printable geometry.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Parametric Gridfinity utensil bin geometry
 
@@ -25,26 +17,6 @@ SHALL NOT provide generic equal-compartment grids; those are deferred to `gridfi
 - **WHEN** a user omits optional parameters
 - **THEN** the system applies the documented defaults (a 2×4 grid, 8 height units, uniform 2 mm walls) and
   produces a valid `KitchenBin` with side cutouts enabled
-
-### Requirement: Gridfinity-standard and freeform height support
-
-The system SHALL accept bin height either as Gridfinity height units (integer multiples of 7 mm)
-or as a freeform millimetre value, but not both simultaneously.
-
-#### Scenario: Generate bin with Gridfinity height units
-
-- **WHEN** a user specifies `height_in_units=7`
-- **THEN** the system generates a bin with an effective height of 49 mm
-
-#### Scenario: Generate bin with freeform millimetre height
-
-- **WHEN** a user specifies `height_mm=55.0` and omits `height_in_units`
-- **THEN** the system generates a bin with a height of 55.0 mm
-
-#### Scenario: Reject combined height specification
-
-- **WHEN** a user specifies both `height_in_units` and `height_mm`
-- **THEN** the system raises a validation error identifying the conflict
 
 ### Requirement: Parameter validation for printable geometry
 
@@ -66,6 +38,8 @@ enabled side cutouts, and (for a `CutleryBin`) the divider count and thickness.
 
 - **WHEN** a `CutleryBin` is requested with a division count less than 1
 - **THEN** the system refuses geometry generation with a clear validation message
+
+## ADDED Requirements
 
 ### Requirement: Pocket interior
 
@@ -141,3 +115,16 @@ When disabled, the side walls and dividers are solid.
 
 - **WHEN** `cutouts_enabled=False` and the cutout dimensions would not fit
 - **THEN** the cutout-fit checks are skipped and generation is not blocked by them
+
+## REMOVED Requirements
+
+### Requirement: Configurable compartment divisions
+
+**Reason**: Generic equal-compartment grids (via `gridfinity_build123d`'s `CompartmentsEqual`) are out of
+scope for this project — they are already well served by `gridfinity_build123d` directly. The bin geometry
+is now an explicitly-sized pocket (`KitchenBin`), optionally split into single-axis columns for cutlery
+(`CutleryBin`).
+
+**Migration**: For a generic N×M compartment grid, use `gridfinity_build123d`'s `Bin` with
+`CompartmentsEqual` directly. For a divided cutlery tray, use a `CutleryBin` with the desired number of
+divisions.
