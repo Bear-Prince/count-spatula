@@ -25,8 +25,8 @@ land, and update the "last passed" date when re-verified.
 ### UAT-3: CutleryBin (2×4, 3 columns)
 
 - Command: `uv run python main.py --divisions 3 --output build/cutlery.stl`
-- Expect: 2×4 footprint split into 3 equal columns by straight dividers; the handle slot runs through the
-  dividers, each still attached to both end walls.
+- Expect: cutouts enabled (the default); 2×4 footprint split into 3 equal columns by straight dividers; the
+  full-height handle slot runs through every divider, with each divider still attached to both end walls.
 - Last passed: 2026-06-22 (slicer)
 
 ### UAT-4: KitchenBin without cutouts (2×4)
