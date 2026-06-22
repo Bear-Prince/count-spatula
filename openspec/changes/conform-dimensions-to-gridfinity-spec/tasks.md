@@ -21,4 +21,4 @@
 - [x] 3.3 Regenerate a default bin and the `chop-board` preset; confirm footprints are 83.5 × 167.5 and
   167.5 × 251.5.
 - [x] 3.4 Refresh the millimetre footprints in `UAT.md`.
-- [ ] 3.5 Archive the change so the spec delta folds into `openspec/specs/`.
+- [x] 3.5 Archive the change so the spec delta folds into `openspec/specs/`.
