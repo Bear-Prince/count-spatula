@@ -9,7 +9,11 @@ model so it fits the bed" work, the fit check needs to be based on the model's *
 ## What Changes
 
 - Base the print-bed check on the model's **actual bounding box** (X, Y, Z) rather than the grid footprint.
-- Add an optional printer **max height** (`--bed-z`) and warn when the model is too tall to print.
+- Ship a **default print volume of 220 × 220 × 240 mm** (width × depth × height) so the check runs by default;
+  override any axis with `--bed-x` / `--bed-y` / `--bed-z`. Warn when the model is too tall as well as too wide/deep.
+- **Print-volume dimensions are millimetres only — no unit conversion** (that is how manufacturers quote build
+  volumes, so it avoids a needless conversion layer). The bin *height* keeps its existing unit option; the *bed*
+  does not.
 - **Evaluate the model in its as-generated orientation only** — no rotation or reorientation. Rotating a model to
   make it "fit" risks overhangs and awkward infill, so we deliberately do not do it.
 - Restore and extend the print-bed **test coverage** lost with `test_utensil_bin.py`.

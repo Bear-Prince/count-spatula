@@ -22,16 +22,20 @@ coverage — the dependable "does it fit?" foundation the later splitting work n
 
 ## Decisions
 
-- **`check_print_bed` takes plain dimensions, not the part.** New signature roughly
-  `check_print_bed(model_x_mm, model_y_mm, model_z_mm, bed_x_mm, bed_y_mm, bed_z_mm=None) -> list[str]`. `main.py`
-  measures `part.bounding_box().size` and passes the three numbers. *Alternative:* pass the build123d part and
-  measure inside. Rejected — keeping it numeric means the tests stay fast (no geometry build) and the function is
-  trivially unit-testable, which is how the old check was already structured. *Acceptance:* calling it with numbers
-  yields the right warnings; no geometry build needed in its tests.
-- **Build the part before the bed check.** Reorder `main`: build the part, measure its bounding box, run the check,
-  then export. *Acceptance:* an oversized model still exports (non-blocking) with a warning to stderr.
-- **`--bed-z` is optional; height is only checked when provided.** Width/depth use `--bed-x`/`--bed-y` as today.
-  *Acceptance:* with `--bed-z` omitted, no height warning is ever emitted.
+- **`check_print_bed` takes plain dimensions, not the part.** New signature
+  `check_print_bed(model_x_mm, model_y_mm, model_z_mm, bed_x_mm, bed_y_mm, bed_z_mm) -> list[str]` (all millimetres).
+  `main.py` measures `part.bounding_box().size` and passes the three numbers. *Alternative:* pass the build123d
+  part and measure inside. Rejected — keeping it numeric means the tests stay fast (no geometry build) and the
+  function is trivially unit-testable, which is how the old check was already structured. *Acceptance:* calling it
+  with numbers yields the right warnings; no geometry build needed in its tests.
+- **Default print volume, millimetres only.** Ship `DEFAULT_BED_X_MM = 220`, `DEFAULT_BED_Y_MM = 220`,
+  `DEFAULT_BED_Z_MM = 240` as the `--bed-x`/`--bed-y`/`--bed-z` defaults, so all three axes are always checked. Bed
+  dimensions are plain millimetres with **no unit conversion** — unlike the bin height, which keeps its unit option.
+  *Acceptance:* a plain invocation checks against 220 × 220 × 240; an override replaces just that axis's value.
+- **Build the part, then always run the bed check.** Because the print volume now has defaults, the check runs on
+  every invocation: `main` builds the part, measures `part.bounding_box()`, runs the check, then exports. The
+  existing CLI test fakes (which returned a bare `object()`) must return a stub part exposing a `bounding_box()`.
+  *Acceptance:* an oversized model still exports (non-blocking) with a warning to stderr.
 - **As-oriented evaluation, no rotation.** The check compares the model's X/Y/Z as generated; it never tries
   rotating to fit. *Acceptance:* a model that would only fit rotated is still reported as exceeding.
 
@@ -43,6 +47,9 @@ coverage — the dependable "does it fit?" foundation the later splitting work n
   footprint.
 - **CLI ordering change.** [Risk] Building before the check means a build error surfaces before the warning. → The
   build already had to happen to export; the only change is the warning now follows the build. No real downside.
+- **The default bed flags the chop-board.** [Risk] The `chop-board` preset is 251.5 mm long, so against the default
+  220 mm depth it now warns by default. → That is correct — it genuinely does not fit a 220 mm bed, so the warning
+  is the feature working (and it motivates the later splitting step). A user with a larger printer passes `--bed-y`.
 
 ## Migration Plan
 

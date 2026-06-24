@@ -2,25 +2,25 @@
 
 ### Requirement: Print-bed size configuration
 
-The system SHALL accept optional print-bed dimensions as CLI parameters — bed width (`--bed-x`), bed depth
-(`--bed-y`), and an optional maximum print height (`--bed-z`) — so that a generated model can be checked against
-the printer's build volume.
+The system SHALL provide a default print volume of 220 mm width × 220 mm depth × 240 mm height, and SHALL accept
+CLI overrides for each axis — `--bed-x`, `--bed-y`, `--bed-z`. All print-volume dimensions are expressed in
+millimetres; the system SHALL NOT apply any unit conversion to them.
 
-#### Scenario: Configure print bed via CLI
+#### Scenario: Default print volume applied
 
-- **WHEN** a user provides `--bed-x 235` and `--bed-y 235` (optionally with `--bed-z 250`)
-- **THEN** the system stores those dimensions and uses them to evaluate the generated model
+- **WHEN** a user provides none of `--bed-x`, `--bed-y`, `--bed-z`
+- **THEN** the system checks the model against the default 220 × 220 × 240 mm build volume
 
-#### Scenario: No bed size configured
+#### Scenario: Override the print volume via CLI
 
-- **WHEN** a user omits `--bed-x` and `--bed-y`
-- **THEN** the system performs no fit check and generates the model without warnings
+- **WHEN** a user provides `--bed-x 235` (and/or `--bed-y`, `--bed-z`)
+- **THEN** the system uses the overridden millimetre value(s) for the corresponding axis
 
 ### Requirement: Warn when bin footprint exceeds print bed
 
 The system SHALL measure the generated model's **actual bounding box** and emit a warning to stderr when any
 dimension exceeds the configured build volume — width against bed X, depth against bed Y, and height against the
-optional maximum print height — and MUST still generate and export the output file. The model SHALL be evaluated in
+maximum print height (Z) — and MUST still generate and export the output file. The model SHALL be evaluated in
 its as-generated (printed) orientation; the system SHALL NOT rotate or reorient the model to make it fit, since
 doing so could introduce overhang or infill problems.
 
@@ -34,11 +34,6 @@ doing so could introduce overhang or infill problems.
 
 - **WHEN** the model's bounding box is within the bed (and within the max height when one is configured)
 - **THEN** the system generates and exports the file with no warning
-
-#### Scenario: Height is checked only when configured
-
-- **WHEN** `--bed-z` is omitted
-- **THEN** the system checks only the X and Y dimensions and does not warn about height
 
 #### Scenario: Warning message is actionable
 

@@ -1,18 +1,20 @@
 ## 1. Bounding-box fit check
 
-- [ ] 1.1 Change `check_print_bed` in `cutlery_bin.py` to take the model's dimensions and the bed limits —
-  `check_print_bed(model_x_mm, model_y_mm, model_z_mm, bed_x_mm, bed_y_mm, bed_z_mm=None)` — warning per axis that
-  exceeds its limit, and checking height only when `bed_z_mm` is given.
-- [ ] 1.2 In `main.py`, after building the part, measure `part.bounding_box()` and run the check only when
-  `--bed-x`/`--bed-y` are provided; add a `--bed-z` flag. Keep it non-blocking (warn to stderr, still export).
+- [ ] 1.1 Change `check_print_bed` in `cutlery_bin.py` to
+  `check_print_bed(model_x_mm, model_y_mm, model_z_mm, bed_x_mm, bed_y_mm, bed_z_mm)` (all millimetres), warning per
+  axis whose model dimension exceeds its bed limit.
+- [ ] 1.2 In `main.py`, add `DEFAULT_BED_X_MM = 220`, `DEFAULT_BED_Y_MM = 220`, `DEFAULT_BED_Z_MM = 240` constants
+  and use them as the `--bed-x`/`--bed-y`/`--bed-z` defaults (millimetres, no unit conversion). After building the
+  part, always measure `part.bounding_box()` and run the check; keep it non-blocking (warn to stderr, still export).
 
 ## 2. Tests
 
-- [ ] 2.1 Restore/extend `check_print_bed` unit tests: fits; exceeds X; exceeds Y; exceeds Z; height not checked
-  when `bed_z_mm` is `None`; the warning names the dimension and the limit.
-- [ ] 2.2 Add a CLI test (with a stub part exposing a bounding box) that an oversized model with `--bed-x`/`--bed-y`
-  warns to stderr, still exports, and exits 0.
-- [ ] 2.3 Confirm the existing CLI tests (no bed flags) still pass — the bbox is only measured when a bed is given.
+- [ ] 2.1 Restore/extend `check_print_bed` unit tests: fits within the volume; exceeds X; exceeds Y; exceeds Z; the
+  warning names the dimension and the limit.
+- [ ] 2.2 Update the existing CLI test fakes to return a stub part exposing a `bounding_box()` (the check now runs
+  on every invocation, so `main` always measures it).
+- [ ] 2.3 Add CLI tests: a normally-sized bin against the default volume produces no warning; an oversized model
+  (or a tight `--bed-y`) warns to stderr, still exports, and exits 0.
 
 ## 3. Verification and UAT
 
