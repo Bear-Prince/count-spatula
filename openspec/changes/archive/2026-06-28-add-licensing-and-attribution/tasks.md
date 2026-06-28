@@ -38,4 +38,4 @@
 
 ## 8. Review
 
-- [ ] 8.1 Open a PR disclosing the coding agent and model used; wait for user review before merge.
+- [x] 8.1 Open a PR disclosing the coding agent and model used; wait for user review before merge. (Opened as #24, reviewed, and merged to main.)
