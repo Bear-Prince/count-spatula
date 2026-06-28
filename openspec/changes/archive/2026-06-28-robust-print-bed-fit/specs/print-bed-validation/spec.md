@@ -1,10 +1,5 @@
-# print-bed-validation Specification
+## MODIFIED Requirements
 
-## Purpose
-
-Allow users to configure their printer's bed dimensions and warn when a requested bin's
-footprint would exceed those dimensions, without blocking generation or export.
-## Requirements
 ### Requirement: Print-bed size configuration
 
 The system SHALL provide a default print volume of 220 mm width × 220 mm depth × 240 mm height, and SHALL accept
@@ -49,4 +44,3 @@ doing so could introduce overhang or infill problems.
 
 - **WHEN** a model would fit only if rotated, but exceeds a limit in its as-generated orientation
 - **THEN** the system still warns that it exceeds the build volume, evaluating the model as-oriented
-
