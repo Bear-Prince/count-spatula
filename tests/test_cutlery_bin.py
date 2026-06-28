@@ -8,6 +8,7 @@ from cutlery_bin import (
     GRIDFINITY_CLEARANCE_MM,
     GRIDFINITY_PITCH_MM,
     BinParameters,
+    check_print_bed,
     create_cutlery_bin,
     create_kitchen_bin,
     preset_names,
@@ -177,3 +178,36 @@ def test_resolve_unknown_preset_raises() -> None:
     assert "chop-board" in preset_names()
     with pytest.raises(ValueError, match="Unknown preset"):
         resolve_preset("does-not-exist")
+
+
+def test_check_print_bed_fits() -> None:
+    """A model within the build volume on every axis yields no warnings."""
+    assert check_print_bed(100.0, 150.0, 50.0, 220.0, 220.0, 240.0) == []
+
+
+def test_check_print_bed_exceeds_width() -> None:
+    """A model wider than bed X warns, naming the dimension and the limit."""
+    warnings = check_print_bed(250.0, 100.0, 50.0, 220.0, 220.0, 240.0)
+    assert len(warnings) == 1
+    assert "width" in warnings[0]
+    assert "250.0" in warnings[0]
+    assert "220.0" in warnings[0]
+
+
+def test_check_print_bed_exceeds_depth() -> None:
+    """A model deeper than bed Y warns about depth."""
+    warnings = check_print_bed(100.0, 300.0, 50.0, 220.0, 220.0, 240.0)
+    assert len(warnings) == 1
+    assert "depth" in warnings[0]
+
+
+def test_check_print_bed_exceeds_height() -> None:
+    """A model taller than the max print height warns about height."""
+    warnings = check_print_bed(100.0, 100.0, 300.0, 220.0, 220.0, 240.0)
+    assert len(warnings) == 1
+    assert "height" in warnings[0]
+
+
+def test_check_print_bed_reports_every_exceeded_axis() -> None:
+    """A model exceeding all three limits produces three warnings."""
+    assert len(check_print_bed(250.0, 250.0, 250.0, 220.0, 220.0, 240.0)) == 3

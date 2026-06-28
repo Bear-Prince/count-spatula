@@ -338,22 +338,30 @@ def create_cutlery_bin(params: BinParameters | None = None) -> CutleryBin:
     return CutleryBin(params=params)
 
 
-def check_print_bed(grid_x: int, grid_y: int, bed_x_mm: float, bed_y_mm: float) -> list[str]:
-    """Return warning strings when the bin footprint exceeds the configured print bed.
+def check_print_bed(
+    model_x_mm: float,
+    model_y_mm: float,
+    model_z_mm: float,
+    bed_x_mm: float,
+    bed_y_mm: float,
+    bed_z_mm: float,
+) -> list[str]:
+    """Return a warning for each model dimension that exceeds the print volume.
 
-    Returns an empty list when the footprint fits within the bed on both axes.
+    All dimensions are in millimetres. The model is evaluated in its as-generated orientation (no
+    rotation). Returns an empty list when the model fits within the build volume on every axis.
     """
-    footprint_x = grid_x * GRIDFINITY_PITCH_MM
-    footprint_y = grid_y * GRIDFINITY_PITCH_MM
     warnings: list[str] = []
-    if footprint_x > bed_x_mm:
-        warnings.append(
-            f"Bin footprint X ({footprint_x} mm) exceeds bed X ({bed_x_mm} mm) by {footprint_x - bed_x_mm:.1f} mm."
-        )
-    if footprint_y > bed_y_mm:
-        warnings.append(
-            f"Bin footprint Y ({footprint_y} mm) exceeds bed Y ({bed_y_mm} mm) by {footprint_y - bed_y_mm:.1f} mm."
-        )
+    for label, model, limit in (
+        ("width", model_x_mm, bed_x_mm),
+        ("depth", model_y_mm, bed_y_mm),
+        ("height", model_z_mm, bed_z_mm),
+    ):
+        if model > limit:
+            warnings.append(
+                f"Model {label} ({model:.1f} mm) exceeds the print volume {label} "
+                f"({limit:.1f} mm) by {model - limit:.1f} mm."
+            )
     return warnings
 
 

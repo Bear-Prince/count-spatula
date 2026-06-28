@@ -22,3 +22,6 @@ wheels/
 # Node dependencies
 node_modules/
 .pnpm-store/
+
+# Claude Code session/isolation worktrees (nested working trees, not repo content)
+.claude/worktrees/
