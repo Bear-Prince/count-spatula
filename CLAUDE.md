@@ -46,7 +46,9 @@ Pre-commit hooks run `ruff check`, `markdownlint`, and `yamllint` on commit; `py
 - `CutleryBin(KitchenBin)` — adds straight, single-axis dividers that split the pocket into equal columns (`params.divisions >= 2`); the side cutout runs through the dividers. Generic equal-compartment grids are out of scope here — use `gridfinity_build123d` directly for those.
 - `create_kitchen_bin(params)` / `create_cutlery_bin(params)` — thin factories; the public entry points from tests and `main.py`.
 - `PRESETS` / `resolve_preset(name)` / `preset_requires_cutouts(name)` — named parameter presets (e.g. `"chop-board"`, which reproduces the original chopping-board bin and forbids disabling its cutouts).
-- `check_print_bed(grid_x, grid_y, bed_x_mm, bed_y_mm)` — returns warning strings when the bin footprint exceeds a given print bed.
+- `check_print_bed(model_x_mm, model_y_mm, model_z_mm, bed_x_mm, bed_y_mm, bed_z_mm)` — checks the model's
+  actual bounding box (all mm) against the print-bed volume and returns warning strings for each axis that exceeds
+  its limit. The model is evaluated as-generated (no rotation).
 
 **`main.py`** is the CLI layer. It parses args into a `BinParameters` (optionally seeded from `--preset`), calls `export_bin()` to write STL or 3MF (selected by `--format` or the output extension), and returns process exit codes. `--divisions >= 2` builds a `CutleryBin`; otherwise a `KitchenBin`. Tests mock the bin factories and export to avoid real geometry builds.
 
