@@ -1,9 +1,15 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 import main
 from cutlery_bin import BinParameters
+
+
+def _stub_part(x: float = 84.0, y: float = 168.0, z: float = 60.0) -> object:
+    """A stand-in for a built part exposing the `bounding_box().size` the CLI measures (mm)."""
+    return SimpleNamespace(bounding_box=lambda: SimpleNamespace(size=SimpleNamespace(X=x, Y=y, Z=z)))
 
 
 def test_default_output_path_is_deterministic() -> None:
@@ -34,19 +40,20 @@ def test_default_output_path_names_cutlery_bin_for_divisions() -> None:
     assert output.name == "cutlery_bin_4x6_h56.stl"
 
 
-def _capture_cli(monkeypatch: pytest.MonkeyPatch, argv: list[str]) -> dict:
+def _capture_cli(monkeypatch: pytest.MonkeyPatch, argv: list[str], part: object | None = None) -> dict:
     """Run the CLI with geometry/export mocked, returning what was built."""
     captured: dict = {}
+    stub = part if part is not None else _stub_part()
 
     def fake_kitchen(params: BinParameters) -> object:
         captured["params"] = params
         captured["kind"] = "kitchen"
-        return object()
+        return stub
 
     def fake_cutlery(params: BinParameters) -> object:
         captured["params"] = params
         captured["kind"] = "cutlery"
-        return object()
+        return stub
 
     monkeypatch.setattr(main, "create_kitchen_bin", fake_kitchen)
     monkeypatch.setattr(main, "create_cutlery_bin", fake_cutlery)
@@ -142,3 +149,24 @@ def test_cli_export_failure_returns_non_zero(capsys: pytest.CaptureFixture[str],
     output = capsys.readouterr()
     assert exit_code == 2
     assert "Output directory does not exist" in output.out
+
+
+def test_cli_default_volume_emits_no_warning(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """A normally-sized bin against the default 220x220x240 volume produces no warning."""
+    _capture_cli(monkeypatch, ["--output", str(tmp_path / "ok.stl")])
+    assert "Warning" not in capsys.readouterr().err
+
+
+def test_cli_warns_when_model_exceeds_bed(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """An oversized model warns to stderr, still exports, and exits 0 (non-blocking)."""
+    result = _capture_cli(
+        monkeypatch, ["--output", str(tmp_path / "big.stl")], part=_stub_part(250.0, 100.0, 60.0)
+    )
+    err = capsys.readouterr().err
+    assert result["exit_code"] == 0
+    assert "exceeds the print volume width" in err
+    assert (tmp_path / "big.stl").exists()

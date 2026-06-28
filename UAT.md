@@ -56,3 +56,11 @@ re-verified.
 - Expect: no file written; exit code 2; message that `cutout_offset_from_edge_mm` is too large for
   `grid_y`.
 - Last passed: 2026-06-22 (also covered by tests)
+
+### UAT-8: print-bed fit warning (default 220 × 220 × 240 mm volume)
+
+- Command: `uv run python main.py --preset chop-board --output build/chop.stl`
+- Expect: the model still exports (exit 0), but a warning is printed to stderr that the model **depth**
+  (251.5 mm) exceeds the print volume depth (220 mm) — because the chop bin is 6 units long. Overriding with a
+  larger `--bed-y` (≥ 252) clears the warning; a tight `--bed-y 100` warns on any bin.
+- Last passed: 2026-06-22 (also covered by tests)

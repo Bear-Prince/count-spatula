@@ -18,6 +18,12 @@ from cutlery_bin import (
     resolve_preset,
 )
 
+# Default print volume in millimetres (width x depth x height). Printers quote build volumes in mm,
+# so these are plain millimetres with no unit conversion. Override per axis with --bed-x/--bed-y/--bed-z.
+DEFAULT_BED_X_MM = 220.0
+DEFAULT_BED_Y_MM = 220.0
+DEFAULT_BED_Z_MM = 240.0
+
 
 def export_bin(part: Shape, output_path: Path) -> Path:
     """Export bin geometry to STL or 3MF, selected by the output file extension."""
@@ -73,8 +79,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="Split the pocket into this many equal columns; 2 or more produces a CutleryBin.",
     )
     parser.add_argument("--divider-thickness-mm", type=float, default=None)
-    parser.add_argument("--bed-x", type=float, default=None, help="Print bed X dimension in mm.")
-    parser.add_argument("--bed-y", type=float, default=None, help="Print bed Y dimension in mm.")
+    parser.add_argument("--bed-x", type=float, default=DEFAULT_BED_X_MM, help="Print bed width in mm.")
+    parser.add_argument("--bed-y", type=float, default=DEFAULT_BED_Y_MM, help="Print bed depth in mm.")
+    parser.add_argument("--bed-z", type=float, default=DEFAULT_BED_Z_MM, help="Maximum print height in mm.")
     parser.add_argument(
         "--format",
         choices=["stl", "3mf"],
@@ -148,10 +155,10 @@ def main(argv: list[str] | None = None) -> int:
         if not output_path.parent.exists():
             msg = f"Output directory does not exist: {output_path.parent}"
             raise FileNotFoundError(msg)
-        if args.bed_x is not None and args.bed_y is not None:
-            for warning in check_print_bed(params.grid_x, params.grid_y, args.bed_x, args.bed_y):
-                print(f"Warning: {warning}", file=sys.stderr)
         part = create_cutlery_bin(params) if params.divisions >= 2 else create_kitchen_bin(params)
+        size = part.bounding_box().size
+        for warning in check_print_bed(size.X, size.Y, size.Z, args.bed_x, args.bed_y, args.bed_z):
+            print(f"Warning: {warning}", file=sys.stderr)
         exported_file = export_bin(part, output_path)
     except (ValueError, FileNotFoundError) as exc:
         print(f"Error: {exc}")
