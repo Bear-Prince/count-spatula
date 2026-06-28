@@ -9,6 +9,7 @@ directly for those.
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from enum import Enum
 
 from build123d import (
     MM,
@@ -370,17 +371,42 @@ def _chop_board_preset() -> BinParameters:
     )
 
 
+class Provenance(Enum):
+    """Where a preset's design comes from, which determines its generated model's license obligations.
+
+    An ``ORIGINAL`` bin (our own measurements and our own profiles) carries whatever model license we
+    choose; a ``DERIVED`` bin reproduces a third party's protected design and inherits that design's
+    license. Provenance must reflect real independence -- dimensions must never be nudged cosmetically
+    to disguise derivative status. See CREDITS.md for the lineage and attribution rules.
+    """
+
+    ORIGINAL = "original"
+    DERIVED = "derived"
+
+
 @dataclass(frozen=True)
 class Preset:
-    """A named preset: a parameter factory plus whether side cutouts are mandatory for it."""
+    """A named preset: a parameter factory plus its cutout rule and licensing provenance."""
 
     factory: Callable[[], BinParameters]
     cutouts_required: bool = False
+    provenance: Provenance = Provenance.ORIGINAL
+    # SPDX identifier for the generated model. Every model is CC BY-SA 4.0 today: derived bins by the
+    # ShareAlike obligation, original bins by the project's deliberate choice (revisitable per bin).
+    model_license: str = "CC-BY-SA-4.0"
+    # For a derived preset, a human-readable reference to the upstream design it reproduces, used for
+    # attribution. ``None`` for original presets.
+    derived_from: str | None = None
 
 
 # The chop-board preset requires cutouts: without them the chopping board is trapped in the pocket.
+# It is an original design (our own IKEA chopping-board measurements and profiles), not derived.
 PRESETS: dict[str, Preset] = {
-    "chop-board": Preset(_chop_board_preset, cutouts_required=True),
+    "chop-board": Preset(
+        _chop_board_preset,
+        cutouts_required=True,
+        provenance=Provenance.ORIGINAL,
+    ),
 }
 
 

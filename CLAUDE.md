@@ -58,3 +58,11 @@ Branch conventions: `feature/<slug>`, `fix/<slug>`, `docs/<slug>`, `refactor/<sl
 - Comments must be grammatically complete sentences.
 - Use `pathlib.Path` instead of `os.path`.
 - `notebooks/` are prototyping only — excluded from ruff and not part of the supported interface.
+
+## Licensing & attribution
+
+Code is Apache 2.0; generated models are CC BY-SA 4.0 (derived bins by obligation,
+original bins by choice). Before adding licenses, headers, presets, or upload tooling,
+read [LICENSING.md](LICENSING.md) for the full rules (code-vs-models split, provenance
+test, attribution requirements, and the distribution constraint). See also
+[CREDITS.md](CREDITS.md) for lineage and [NOTICE](NOTICE) for dependency notices.

@@ -1,9 +1,14 @@
 [project]
 name = "count-spatula"
 version = "0.1.0"
-description = "Add your description here"
+description = "Parametric generator for Gridfinity-compatible kitchen and cutlery bins."
 readme = "README.md"
 requires-python = ">=3.13"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+]
 dependencies = [
     # Pin build123d exactly: the bin geometry depends on subtle build123d behaviour
     # (e.g. what BuildSketch.faces() returns), so an unpinned upgrade can silently

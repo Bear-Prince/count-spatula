@@ -106,3 +106,49 @@ uv run python main.py --grid-x 6 --grid-y 4 --bed-x 235 --bed-y 235
 
 The CLI validates parameter ranges and returns a non-zero exit code with
 actionable text when values are invalid (including an unknown `--preset`).
+
+## Licensing
+
+This project ships two kinds of work under two different licenses:
+
+- **Generator code** → [Apache License 2.0](LICENSE).
+- **Generated model files** (STL/STEP/3MF) → [CC BY-SA
+  4.0](https://creativecommons.org/licenses/by-sa/4.0/) (full text in
+  [`LICENSES/CC-BY-SA-4.0.txt`](LICENSES/CC-BY-SA-4.0.txt)).
+
+All generated models are CC BY-SA 4.0: **derived** bins (those reproducing The
+Next Layer's design) by the ShareAlike obligation, and **original** bins (our own
+measurements and profiles, e.g. the `chop-board` IKEA bin) by deliberate choice.
+Each preset records its `provenance` (`original` or `derived`) and model license.
+
+See [CREDITS.md](CREDITS.md) for the full design lineage and per-model attribution
+rules, and [NOTICE](NOTICE) for retained dependency notices.
+
+### Dependency and source licenses (verified)
+
+| Work | Author | License |
+| --- | --- | --- |
+| Gridfinity | Zack Freedman | MIT |
+| `gridfinity_build123d` | Ruudjhuu | MIT |
+| `build123d` | gumyr / contributors | Apache 2.0 |
+| "Gridfinity Complete Kitchen Collection" | The Next Layer (JonathanLevi) | CC BY-SA 4.0 |
+| "Gridfinity Blanks" | atmmilani (Thingiverse) | CC BY 4.0 |
+
+### Attribution for derived models
+
+Any **derived** bin must ship with the CC BY-SA 4.0 attribution block (credit The
+Next Layer, link the Printables source, link the license, state that changes were
+made, preserve prior notices, mark our version as also CC BY-SA 4.0). It must also
+credit the upstream author atmmilani (CC BY 4.0), whose attribution requirement
+persists downstream. The exact block lives in [CREDITS.md](CREDITS.md). The
+repository currently contains no derived presets.
+
+### Distribution constraint
+
+Derived (CC BY-SA 4.0) models may only be published to platforms that preserve
+CC BY-SA 4.0 (for example Printables and Thingiverse). They must **not** be
+published under an exclusive or ShareAlike-incompatible platform license (for
+example MakerWorld's exclusive Standard Digital File License). Any future upload
+tooling must enforce this and respect each platform's terms of service.
+
+This is a working understanding, not legal advice.
