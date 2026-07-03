@@ -1,5 +1,8 @@
 # count-spatula
 
+[![Tests](https://github.com/Bear-Prince/count-spatula/actions/workflows/tests.yml/badge.svg)](https://github.com/Bear-Prince/count-spatula/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/Bear-Prince/count-spatula/branch/main/graph/badge.svg)](https://codecov.io/gh/Bear-Prince/count-spatula)
+
 ## OpenSpec (local to this repo)
 
 This repository uses the OpenSpec CLI as a local dev dependency.
