@@ -23,6 +23,7 @@ dev = [
     "ocp-vscode>=3.0.1",
     "pyyaml>=6.0.2",
     "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
     "ruff>=0.14.11",
     "taplo>=0.9.3",
     "isort>=8.0.1",
@@ -39,6 +40,23 @@ required-environments = ["sys_platform == 'linux' and platform_machine == 'x86_6
 
 [tool.pytest.ini_options]
 pythonpath = "."
+addopts = "--strict-markers"
+markers = [
+    "scenario(capability, name): links the test to an OpenSpec scenario in openspec/specs/<capability>/spec.md",
+    "slow: builds real geometry; deselect for a fast run with -m 'not slow'",
+]
+filterwarnings = [
+    # The ezdxf dependency (via build123d) uses deprecated pyparsing APIs; the noise is not ours to fix.
+    "ignore::DeprecationWarning:ezdxf.queryparser",
+]
+
+[tool.coverage.run]
+source = ["cutlery_bin", "main"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+precision = 1
 
 [tool.ruff]
 line-length = 120

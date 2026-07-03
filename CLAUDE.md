@@ -20,6 +20,12 @@ uv run python main.py --grid-x 2 --grid-y 4 --divisions 3 --format 3mf
 # Run tests
 uv run pytest
 
+# Fast test run (skips the slow real-geometry builds)
+uv run pytest -m "not slow"
+
+# Run tests with a coverage report
+uv run pytest --cov --cov-report=term-missing
+
 # Run a single test file
 uv run pytest tests/test_cli_and_params.py
 
@@ -34,7 +40,12 @@ pnpm exec openspec --help
 pnpm exec openspec new change "my-change-name"
 ```
 
-Pre-commit hooks run `ruff check`, `markdownlint`, and `yamllint` on commit; `pytest` runs on push. Install hooks with `uv run pre-commit install`.
+Pre-commit hooks run `ruff check`, `markdownlint`, and `yamllint` on commit; `pytest` (with a coverage summary) runs on push. Install hooks with `uv run pre-commit install`.
+
+## Testing conventions
+
+- Tests are linked to OpenSpec scenarios with `@pytest.mark.scenario("<capability>", "<scenario name>")`. The guard in `tests/test_spec_traceability.py` fails when a spec scenario has no claiming test (unless allowlisted in `UNTESTED_SCENARIOS` with a reason) or a marker names a scenario that does not exist — so syncing specs and adding tests must move together.
+- Tests that build real geometry are auto-marked `slow` (see `tests/conftest.py`); use `-m "not slow"` for a fast loop.
 
 ## Architecture
 
