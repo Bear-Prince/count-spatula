@@ -42,6 +42,22 @@ _BELOW_FLOOR_BOX = ((0.0, 0.0, 1.5), (180.0, 260.0, 4.0))
 _DIVIDER_MID_BOX = ((0.0, 0.0, 40.0), (8.0, 40.0, 30.0))
 _DIVIDER_END_BOX = ((0.0, 100.0, 40.0), (8.0, 30.0, 30.0))
 
+# Probe boxes for wave dividers on the default 2x4 grid (pocket 79.5 (X) x 163.5 (Y); div=3 puts the
+# two divider centrelines at X = -/+13.25 with column pitch 26.5). The sine swings fully at Y = -L/4
+# (= -40.875): with amplitude 4 mm the two dividers move to X = -9.25 and +9.25 (both toward centre),
+# and away from X = -17.25 / +17.25. Near the ends the offset returns to ~0, so the dividers sit on
+# their nominal centrelines.
+_W_END_LEFT_BOX = ((-13.25, 78.0, 40.0), (4.0, 6.0, 30.0))
+_W_END_RIGHT_BOX = ((13.25, 78.0, 40.0), (4.0, 6.0, 30.0))
+_W_SWING_INNER_L_BOX = ((-9.25, -40.875, 40.0), (2.0, 6.0, 30.0))
+_W_SWING_INNER_R_BOX = ((9.25, -40.875, 40.0), (2.0, 6.0, 30.0))
+_W_SWING_OUTER_L_BOX = ((-17.25, -40.875, 40.0), (2.0, 6.0, 30.0))
+_W_SWING_OUTER_R_BOX = ((17.25, -40.875, 40.0), (2.0, 6.0, 30.0))
+_W_CUT_MID_BOX = ((-13.25, 0.0, 40.0), (6.0, 30.0, 30.0))
+# A sub-floor probe at a divider centreline (floor_z ~ 3.9, base bottom ~ -3.9): spans Z -3.5..3.5,
+# inside the base where the Gridfinity grooves live. A correctly-placed divider adds nothing here.
+_W_SUBFLOOR_BOX = ((-13.25, 0.0, 0.0), (4.0, 40.0, 7.0))
+
 
 @pytest.fixture(scope="module")
 def bins() -> dict:
@@ -52,6 +68,13 @@ def bins() -> dict:
         "default_solid": create_kitchen_bin(BinParameters(cutouts_enabled=False)),
         "cutlery_default1": create_cutlery_bin(BinParameters(divisions=1)),
         "cutlery_default3": create_cutlery_bin(BinParameters(divisions=3)),
+        "cutlery_straight3": create_cutlery_bin(BinParameters(divisions=3, divider_profile="straight")),
+        "cutlery_wave3_solid": create_cutlery_bin(
+            BinParameters(divisions=3, divider_profile="wave", divider_amplitude_mm=4.0, cutouts_enabled=False)
+        ),
+        "cutlery_wave3_cut": create_cutlery_bin(
+            BinParameters(divisions=3, divider_profile="wave", divider_amplitude_mm=4.0)
+        ),
         "chop": create_kitchen_bin(chop),
         "chop_solid": create_kitchen_bin(replace(chop, cutouts_enabled=False)),
         "cutlery_chop2": create_cutlery_bin(replace(chop, divisions=2)),
@@ -150,6 +173,55 @@ def test_divider_stays_attached_at_ends(bins: dict) -> None:
     assert _region_volume(bins["cutlery_chop2"], *_DIVIDER_END_BOX) > 100.0
 
 
+def test_default_profile_matches_straight(bins: dict) -> None:
+    """Omitting the divider profile produces the same geometry as the explicit straight profile."""
+    assert abs(bins["cutlery_default3"].volume - bins["cutlery_straight3"].volume) < 1.0
+
+
+def test_wave_profile_adds_dividers_without_changing_footprint(bins: dict) -> None:
+    """A wave CutleryBin adds divider material to an undivided bin and keeps the 2x4 footprint."""
+    wave, plain = bins["cutlery_wave3_solid"], bins["default_solid"]
+    assert wave.volume > plain.volume
+    assert abs(wave.bounding_box().size.X - plain.bounding_box().size.X) < 0.5
+    assert abs(wave.bounding_box().size.Y - plain.bounding_box().size.Y) < 0.5
+
+
+def test_wave_dividers_meet_end_walls(bins: dict) -> None:
+    """Near the pocket ends a wave divider returns to its nominal centreline and meets both walls."""
+    wave = bins["cutlery_wave3_solid"]
+    assert _region_volume(wave, *_W_END_LEFT_BOX) > 100.0
+    assert _region_volume(wave, *_W_END_RIGHT_BOX) > 100.0
+
+
+def test_adjacent_wave_dividers_alternate(bins: dict) -> None:
+    """At full swing the two dividers are phase-mirrored, both pulled toward the centre."""
+    wave = bins["cutlery_wave3_solid"]
+    # Material is where the mirrored dividers swing inward, and absent where they swing away from.
+    assert _region_volume(wave, *_W_SWING_INNER_L_BOX) > 100.0
+    assert _region_volume(wave, *_W_SWING_INNER_R_BOX) > 100.0
+    assert _region_volume(wave, *_W_SWING_OUTER_L_BOX) < 30.0
+    assert _region_volume(wave, *_W_SWING_OUTER_R_BOX) < 30.0
+
+
+def test_wave_dividers_do_not_intrude_into_base(bins: dict) -> None:
+    """Wave dividers rise from the inner floor, adding no material below it (into the base grooves)."""
+    wave, plain = bins["cutlery_wave3_solid"], bins["default_solid"]
+    below_floor = abs(_region_volume(wave, *_W_SUBFLOOR_BOX) - _region_volume(plain, *_W_SUBFLOOR_BOX))
+    assert below_floor < 30.0, f"Wave divider intrudes {below_floor:.1f} mm^3 into the base below the floor"
+
+
+def test_cutout_passes_through_wave_divider(bins: dict) -> None:
+    """The side cutout slot still removes material from a wave divider's central band."""
+    cut, solid = bins["cutlery_wave3_cut"], bins["cutlery_wave3_solid"]
+    removed = _region_volume(solid, *_W_CUT_MID_BOX) - _region_volume(cut, *_W_CUT_MID_BOX)
+    assert removed > 100.0, f"Expected the slot to pass through the wave divider, only {removed:.1f} mm^3 removed"
+
+
+def test_wave_divider_stays_attached_at_ends_with_cutout(bins: dict) -> None:
+    """With cutouts on, the wave divider's ends (outside the slot band) remain attached."""
+    assert _region_volume(bins["cutlery_wave3_cut"], *_W_END_LEFT_BOX) > 100.0
+
+
 def test_validation_rejects_out_of_range_grid() -> None:
     """Validation reports an out-of-range grid size."""
     with pytest.raises(ValueError, match="grid_x"):
@@ -166,6 +238,31 @@ def test_validation_rejects_invalid_divisions() -> None:
     """Validation rejects a division count below 1."""
     with pytest.raises(ValueError, match="divisions"):
         BinParameters(divisions=0).validate()
+
+
+def test_divider_profile_defaults_to_straight() -> None:
+    """The divider profile defaults to straight with no amplitude, preserving existing behaviour."""
+    params = BinParameters()
+    assert params.divider_profile == "straight"
+    assert params.divider_amplitude_mm == 0.0
+
+
+def test_validation_rejects_unknown_divider_profile() -> None:
+    """Validation rejects a divider profile that is neither straight nor wave."""
+    with pytest.raises(ValueError, match="divider_profile"):
+        BinParameters(divider_profile="zigzag").validate()
+
+
+def test_validation_rejects_non_positive_wave_amplitude() -> None:
+    """The wave profile requires a positive amplitude."""
+    with pytest.raises(ValueError, match="divider_amplitude_mm must be greater than 0"):
+        BinParameters(divisions=2, divider_profile="wave", divider_amplitude_mm=0.0).validate()
+
+
+def test_validation_rejects_oversized_wave_amplitude() -> None:
+    """A wave amplitude that would collide a divider with its neighbour is rejected."""
+    with pytest.raises(ValueError, match="divider_amplitude_mm is too large"):
+        BinParameters(divisions=2, divider_profile="wave", divider_amplitude_mm=1000.0).validate()
 
 
 def test_validation_skips_cutout_checks_when_disabled() -> None:

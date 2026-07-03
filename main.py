@@ -79,6 +79,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Split the pocket into this many equal columns; 2 or more produces a CutleryBin.",
     )
     parser.add_argument("--divider-thickness-mm", type=float, default=None)
+    parser.add_argument(
+        "--divider-profile",
+        choices=["straight", "wave"],
+        default=None,
+        help="Divider shape: 'straight' (flat, default) or 'wave' (S-curve for nesting cutlery).",
+    )
+    parser.add_argument(
+        "--divider-amplitude-mm",
+        type=float,
+        default=None,
+        help="Sideways swing of a wave divider in mm; required when --divider-profile is 'wave'.",
+    )
     parser.add_argument("--bed-x", type=float, default=DEFAULT_BED_X_MM, help="Print bed width in mm.")
     parser.add_argument("--bed-y", type=float, default=DEFAULT_BED_Y_MM, help="Print bed depth in mm.")
     parser.add_argument("--bed-z", type=float, default=DEFAULT_BED_Z_MM, help="Maximum print height in mm.")
@@ -113,6 +125,8 @@ def create_parameters(args: argparse.Namespace) -> BinParameters:
         "cutouts_enabled": args.cutouts_enabled,
         "divisions": args.divisions,
         "divider_thickness_mm": args.divider_thickness_mm,
+        "divider_profile": args.divider_profile,
+        "divider_amplitude_mm": args.divider_amplitude_mm,
     }
     overrides = {key: value for key, value in simple.items() if value is not None}
 
