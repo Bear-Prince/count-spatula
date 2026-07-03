@@ -85,6 +85,26 @@ def test_cli_no_cutouts_flag_disables_cutouts(monkeypatch: pytest.MonkeyPatch, t
     assert result["params"].cutouts_enabled is False
 
 
+def test_cli_wave_profile_flags_set_parameters(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """The wave divider flags populate the corresponding parameters and build a CutleryBin."""
+    result = _capture_cli(
+        monkeypatch,
+        ["--divisions", "3", "--divider-profile", "wave", "--divider-amplitude-mm", "4",
+         "--output", str(tmp_path / "wave.stl")],
+    )
+    assert result["exit_code"] == 0
+    assert result["kind"] == "cutlery"
+    assert result["params"].divider_profile == "wave"
+    assert result["params"].divider_amplitude_mm == 4.0
+
+
+def test_cli_defaults_to_straight_divider_profile(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Omitting the divider flags leaves the straight profile with no amplitude."""
+    result = _capture_cli(monkeypatch, ["--divisions", "3", "--output", str(tmp_path / "s.stl")])
+    assert result["params"].divider_profile == "straight"
+    assert result["params"].divider_amplitude_mm == 0.0
+
+
 def test_cli_preset_seeds_parameters(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """The chop-board preset seeds the chopping-board pocket dimensions."""
     result = _capture_cli(monkeypatch, ["--preset", "chop-board", "--output", str(tmp_path / "chop.stl")])

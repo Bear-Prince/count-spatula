@@ -7,6 +7,7 @@ dividers. Generic equal-compartment grids are out of scope here -- use ``gridfin
 directly for those.
 """
 
+import math
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
@@ -27,6 +28,7 @@ from build123d import (
     Locations,
     Mode,
     Plane,
+    Polyline,
     Rectangle,
     RectangleRounded,
     RotationLike,
@@ -46,6 +48,14 @@ GRIDFINITY_CLEARANCE_MM = 0.5 * MM  # Total per-axis footprint clearance (bin = 
 DEFAULT_WALL_THICKNESS = 2 * MM  # mm; uniform wall thickness used to derive the default pocket.
 DEFAULT_CUTOUT_OFFSET = 40 * MM  # mm from the outer Y edge to the edge of the cutout (tunable starting point).
 DEFAULT_CUTOUT_RADIUS = 12.5 * MM  # mm radius of the side cutout arc.
+
+# Divider profiles. A "straight" divider is a flat slab; a "wave" divider follows a single S-curve
+# (one sine period) along the pocket length so that tapered cutlery can nest in alternating channels.
+DIVIDER_STRAIGHT = "straight"
+DIVIDER_WAVE = "wave"
+DIVIDER_PROFILES = (DIVIDER_STRAIGHT, DIVIDER_WAVE)
+MIN_CHANNEL_GAP = 2.0 * MM  # mm; minimum printable gap a wave divider must leave to its neighbour or wall.
+WAVE_SAMPLE_COUNT = 64  # Number of segments used to approximate a wave divider's sine curve.
 
 # The chop-board preset reproduces the original chopping-board bin: an explicit, non-uniform-wall pocket.
 CHOP_GRID_X = 4
@@ -80,6 +90,8 @@ class BinParameters:
     cutouts_enabled: bool = True
     divisions: int = 1
     divider_thickness_mm: float = 2.0
+    divider_profile: str = DIVIDER_STRAIGHT
+    divider_amplitude_mm: float = 0.0
 
     @property
     def effective_height_mm(self) -> float:
@@ -161,6 +173,27 @@ class BinParameters:
             errors.append("divisions must be at least 1")
         if self.divider_thickness_mm <= 0:
             errors.append("divider_thickness_mm must be greater than 0")
+
+        if self.divider_profile not in DIVIDER_PROFILES:
+            allowed = ", ".join(DIVIDER_PROFILES)
+            errors.append(f"divider_profile must be one of: {allowed}")
+        elif self.divider_profile == DIVIDER_WAVE:
+            # A wave divider needs a positive amplitude, and that amplitude must leave a printable gap
+            # between a divider and its phase-mirrored neighbour (the tightest constraint, which also
+            # keeps the outermost divider clear of the pocket wall).
+            if self.divider_amplitude_mm <= 0:
+                errors.append(
+                    "divider_amplitude_mm must be greater than 0 for the wave profile; "
+                    "use the straight profile for flat dividers"
+                )
+            elif self.divisions >= 2:
+                column_pitch = self.effective_pocket_width_mm / self.divisions
+                max_amplitude = (column_pitch - self.divider_thickness_mm - MIN_CHANNEL_GAP) / 2
+                if self.divider_amplitude_mm > max_amplitude:
+                    errors.append(
+                        "divider_amplitude_mm is too large for this divider spacing; "
+                        f"it must be at most {max_amplitude:.2f} mm to leave a printable gap"
+                    )
 
         # The cutout-fit checks only constrain geometry that is actually built, so they are skipped
         # when cutouts are disabled and the cutout dimensions are inert.
@@ -303,24 +336,70 @@ class CutleryBin(KitchenBin):
     """A ``KitchenBin`` whose pocket is split into equal columns by straight single-axis dividers."""
 
     def _add_interior(self, params: BinParameters, floor_z: float, top_z: float) -> None:
-        """Add straight dividers parallel to the cut walls, splitting the pocket into equal columns."""
+        """Add dividers parallel to the cut walls, splitting the pocket into equal columns.
+
+        Dividers are straight slabs by default. With the wave profile each divider follows a single
+        S-curve along the pocket length and adjacent dividers are phase-mirrored, so the channels
+        between them alternate orientation and tapered cutlery can nest head-to-tail.
+        """
         if params.divisions < 2:
             return
         pocket_width = params.effective_pocket_width_mm
         pocket_length = params.effective_pocket_length_mm
         column_pitch = pocket_width / params.divisions
         height = top_z - floor_z
-        # Dividers sit at evenly spaced X positions inside the pocket, span the full pocket length
+        # Dividers sit at evenly spaced X centrelines inside the pocket, span the full pocket length
         # (attaching to both un-cut walls), and rise from the inner floor to the top.
-        for index in range(1, params.divisions):
-            x = -pocket_width / 2 + index * column_pitch
-            with Locations((x, 0, floor_z)):
-                Box(
-                    params.divider_thickness_mm,
-                    pocket_length,
-                    height,
-                    align=(Align.CENTER, Align.CENTER, Align.MIN),
-                )
+        for counter, index in enumerate(range(1, params.divisions)):
+            centreline_x = -pocket_width / 2 + index * column_pitch
+            if params.divider_profile == DIVIDER_WAVE:
+                # Negate the amplitude on alternate dividers to phase-mirror neighbouring channels.
+                amplitude = params.divider_amplitude_mm * (-1) ** counter
+                self._add_wave_divider(centreline_x, amplitude, params.divider_thickness_mm, floor_z, height,
+                                       pocket_length)
+            else:
+                with Locations((centreline_x, 0, floor_z)):
+                    Box(
+                        params.divider_thickness_mm,
+                        pocket_length,
+                        height,
+                        align=(Align.CENTER, Align.CENTER, Align.MIN),
+                    )
+
+    @staticmethod
+    def _add_wave_divider(
+        centreline_x: float,
+        amplitude: float,
+        thickness: float,
+        floor_z: float,
+        height: float,
+        pocket_length: float,
+    ) -> None:
+        """Add one S-curve divider as a vertical prism extruded from a sampled wavy band.
+
+        The centreline is displaced in X by ``amplitude * sin(2*pi*t)`` for ``t`` in ``[0, 1]`` along
+        the pocket length, so it is zero at both ends and meets the un-cut walls at the nominal
+        spacing. The band is the region between the centreline offset by plus/minus half the divider
+        thickness, sampled as a polyline and extruded from the inner floor to the wall top.
+        """
+        half_thickness = thickness / 2
+        right_edge: list[tuple[float, float]] = []
+        left_edge: list[tuple[float, float]] = []
+        for sample in range(WAVE_SAMPLE_COUNT + 1):
+            t = sample / WAVE_SAMPLE_COUNT
+            y = -pocket_length / 2 + t * pocket_length
+            offset = amplitude * math.sin(2 * math.pi * t)
+            right_edge.append((centreline_x + offset + half_thickness, y))
+            left_edge.append((centreline_x + offset - half_thickness, y))
+        # Trace up the right edge, then back down the left edge, to form a simple closed ribbon.
+        outline = right_edge + list(reversed(left_edge))
+        # Extrude via sketch.faces() to keep the floor_z placement: sketch.face() resets the face
+        # location to the origin, dropping the offset and pushing the divider down into the base.
+        with BuildSketch(Plane.XY.offset(floor_z)) as band:
+            with BuildLine():
+                Polyline(*outline, close=True)
+            make_face()
+        extrude(to_extrude=band.sketch.faces(), amount=height)
 
     @property
     def top(self) -> Face:
