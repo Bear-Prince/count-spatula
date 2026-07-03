@@ -404,7 +404,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "build123d", specifier = "==0.9.0" },
-    { name = "gridfinity-build123d", git = "ssh://git@github.com/Ruudjhuu/gridfinity_build123d?rev=261f4550ba26c3be58eca4f8abdc9e112a30d396" },
+    { name = "gridfinity-build123d", git = "https://github.com/Ruudjhuu/gridfinity_build123d?rev=261f4550ba26c3be58eca4f8abdc9e112a30d396" },
 ]
 
 [package.metadata.requires-dev]
@@ -589,7 +589,7 @@ wheels = [
 [[package]]
 name = "gridfinity-build123d"
 version = "0.1.0"
-source = { git = "ssh://git@github.com/Ruudjhuu/gridfinity_build123d?rev=261f4550ba26c3be58eca4f8abdc9e112a30d396#261f4550ba26c3be58eca4f8abdc9e112a30d396" }
+source = { git = "https://github.com/Ruudjhuu/gridfinity_build123d?rev=261f4550ba26c3be58eca4f8abdc9e112a30d396#261f4550ba26c3be58eca4f8abdc9e112a30d396" }
 dependencies = [
     { name = "bd-warehouse" },
     { name = "build123d" },
