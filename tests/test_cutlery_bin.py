@@ -82,6 +82,7 @@ def bins() -> dict:
     }
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Default pocket derived from wall thickness")
 def test_default_is_a_2x4_thin_walled_bin() -> None:
     """The default bin is a 2x4 with 2 mm walls -- not the chop dimensions (parameter-level)."""
     params = BinParameters()
@@ -92,6 +93,8 @@ def test_default_is_a_2x4_thin_walled_bin() -> None:
     assert params.effective_pocket_length_mm == pytest.approx(4 * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM - 4)
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Generate geometry from defaults")
+@pytest.mark.scenario("gridfinity-utensil-bin", "Footprint applies the GridFinity clearance")
 def test_default_kitchen_footprint(bins: dict) -> None:
     """A default KitchenBin has the 2x4 outer footprint with the GridFinity 0.5 mm clearance."""
     bbox = bins["default"].bounding_box()
@@ -99,6 +102,7 @@ def test_default_kitchen_footprint(bins: dict) -> None:
     assert abs(bbox.size.Y - (4 * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM)) < 0.1
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Walls sit flush on the base")
 def test_wall_outline_matches_base_footprint(bins: dict) -> None:
     """The bin's outer footprint matches the Gridfinity base it sits on (no overhang)."""
     base_x, base_y = _base_footprint(2, 4)
@@ -107,6 +111,9 @@ def test_wall_outline_matches_base_footprint(bins: dict) -> None:
     assert abs(bbox.size.Y - base_y) < 0.2
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Generate a KitchenBin from explicit valid parameters")
+@pytest.mark.scenario("gridfinity-utensil-bin", "Explicit pocket with non-uniform walls")
+@pytest.mark.scenario("bin-presets", "Generate a bin from a preset")
 def test_chop_board_preset_reproduces_chop_bin(bins: dict) -> None:
     """The chop-board preset is the 4x6 chop bin, distinct from the default."""
     chop_bbox = bins["chop"].bounding_box()
@@ -117,16 +124,19 @@ def test_chop_board_preset_reproduces_chop_bin(bins: dict) -> None:
     assert (chop.pocket_width_mm, chop.pocket_length_mm) == (160, 220)
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "A single division is a plain KitchenBin pocket")
 def test_cutlery_with_one_division_matches_kitchen(bins: dict) -> None:
     """A CutleryBin with a single division is geometrically a plain KitchenBin."""
     assert abs(bins["cutlery_default1"].volume - bins["default"].volume) < 1.0
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Split the pocket into equal columns")
 def test_cutlery_with_three_divisions_adds_material(bins: dict) -> None:
     """Adding dividers adds material relative to an undivided bin."""
     assert bins["cutlery_default3"].volume > bins["default"].volume
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Cutouts disabled")
 def test_disabling_cutouts_leaves_more_material(bins: dict) -> None:
     """A bin without cutouts uses more material but keeps the same footprint."""
     cut, solid = bins["default"], bins["default_solid"]
@@ -134,18 +144,21 @@ def test_disabling_cutouts_leaves_more_material(bins: dict) -> None:
     assert abs(solid.bounding_box().size.X - cut.bounding_box().size.X) < 1.0
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Cutouts are symmetric and leave the base intact")
 def test_side_cutout_leaves_base_intact(bins: dict) -> None:
     """The side cutout removes no material from the Gridfinity base slab."""
     cut, solid = bins["chop"], bins["chop_solid"]
     assert abs(_region_volume(cut, *_BASE_BOX) - _region_volume(solid, *_BASE_BOX)) < 1.0
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Cutouts are symmetric and leave the base intact")
 def test_side_cutout_starts_at_inner_floor(bins: dict) -> None:
     """The side cutout begins at the inner floor and does not cut the base below it."""
     cut, solid = bins["chop"], bins["chop_solid"]
     assert abs(_region_volume(cut, *_BELOW_FLOOR_BOX) - _region_volume(solid, *_BELOW_FLOOR_BOX)) < 1.0
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Cutouts enabled by default")
 def test_side_cutout_removes_material_from_walls(bins: dict) -> None:
     """The side cutout removes material from the side walls."""
     cut, solid = bins["chop"], bins["chop_solid"]
@@ -153,6 +166,7 @@ def test_side_cutout_removes_material_from_walls(bins: dict) -> None:
     assert removed > 1000.0, f"Expected the side wall to be slotted, only {removed:.1f} mm^3 removed"
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Cutouts are symmetric and leave the base intact")
 def test_side_cutout_is_symmetric(bins: dict) -> None:
     """Both long walls receive an identical cutout."""
     cut = bins["chop"]
@@ -161,6 +175,7 @@ def test_side_cutout_is_symmetric(bins: dict) -> None:
     assert abs(left - right) < 1.0, f"Cutout asymmetric: left {left:.1f} vs right {right:.1f}"
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Cutout passes through dividers")
 def test_cutout_passes_through_divider(bins: dict) -> None:
     """With cutouts on, the slot removes material from the divider's central band."""
     cut, solid = bins["cutlery_chop2"], bins["cutlery_chop2_solid"]
@@ -168,16 +183,19 @@ def test_cutout_passes_through_divider(bins: dict) -> None:
     assert removed > 100.0, f"Expected the slot to pass through the divider, only {removed:.1f} mm^3 removed"
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Cutout passes through dividers")
 def test_divider_stays_attached_at_ends(bins: dict) -> None:
     """The divider ends (outside the cutout band) remain present with cutouts on."""
     assert _region_volume(bins["cutlery_chop2"], *_DIVIDER_END_BOX) > 100.0
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Default profile preserves straight geometry")
 def test_default_profile_matches_straight(bins: dict) -> None:
     """Omitting the divider profile produces the same geometry as the explicit straight profile."""
     assert abs(bins["cutlery_default3"].volume - bins["cutlery_straight3"].volume) < 1.0
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Wave profile bends the dividers")
 def test_wave_profile_adds_dividers_without_changing_footprint(bins: dict) -> None:
     """A wave CutleryBin adds divider material to an undivided bin and keeps the 2x4 footprint."""
     wave, plain = bins["cutlery_wave3_solid"], bins["default_solid"]
@@ -186,6 +204,7 @@ def test_wave_profile_adds_dividers_without_changing_footprint(bins: dict) -> No
     assert abs(wave.bounding_box().size.Y - plain.bounding_box().size.Y) < 0.5
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Wave profile bends the dividers")
 def test_wave_dividers_meet_end_walls(bins: dict) -> None:
     """Near the pocket ends a wave divider returns to its nominal centreline and meets both walls."""
     wave = bins["cutlery_wave3_solid"]
@@ -193,6 +212,7 @@ def test_wave_dividers_meet_end_walls(bins: dict) -> None:
     assert _region_volume(wave, *_W_END_RIGHT_BOX) > 100.0
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Adjacent wave dividers alternate orientation")
 def test_adjacent_wave_dividers_alternate(bins: dict) -> None:
     """At full swing the two dividers are phase-mirrored, both pulled toward the centre."""
     wave = bins["cutlery_wave3_solid"]
@@ -210,6 +230,7 @@ def test_wave_dividers_do_not_intrude_into_base(bins: dict) -> None:
     assert below_floor < 30.0, f"Wave divider intrudes {below_floor:.1f} mm^3 into the base below the floor"
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Cutout passes through dividers")
 def test_cutout_passes_through_wave_divider(bins: dict) -> None:
     """The side cutout slot still removes material from a wave divider's central band."""
     cut, solid = bins["cutlery_wave3_cut"], bins["cutlery_wave3_solid"]
@@ -217,29 +238,34 @@ def test_cutout_passes_through_wave_divider(bins: dict) -> None:
     assert removed > 100.0, f"Expected the slot to pass through the wave divider, only {removed:.1f} mm^3 removed"
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Cutout passes through dividers")
 def test_wave_divider_stays_attached_at_ends_with_cutout(bins: dict) -> None:
     """With cutouts on, the wave divider's ends (outside the slot band) remain attached."""
     assert _region_volume(bins["cutlery_wave3_cut"], *_W_END_LEFT_BOX) > 100.0
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Reject out-of-range grid size")
 def test_validation_rejects_out_of_range_grid() -> None:
     """Validation reports an out-of-range grid size."""
     with pytest.raises(ValueError, match="grid_x"):
         BinParameters(grid_x=0).validate()
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Reject a pocket that does not fit")
 def test_validation_rejects_oversized_pocket() -> None:
     """Validation rejects an explicit pocket that does not fit the footprint."""
     with pytest.raises(ValueError, match="pocket width must be smaller"):
         BinParameters(pocket_width_mm=10_000).validate()
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Reject invalid divider count")
 def test_validation_rejects_invalid_divisions() -> None:
     """Validation rejects a division count below 1."""
     with pytest.raises(ValueError, match="divisions"):
         BinParameters(divisions=0).validate()
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Default profile preserves straight geometry")
 def test_divider_profile_defaults_to_straight() -> None:
     """The divider profile defaults to straight with no amplitude, preserving existing behaviour."""
     params = BinParameters()
@@ -253,23 +279,57 @@ def test_validation_rejects_unknown_divider_profile() -> None:
         BinParameters(divider_profile="zigzag").validate()
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Reject a non-positive wave amplitude")
 def test_validation_rejects_non_positive_wave_amplitude() -> None:
     """The wave profile requires a positive amplitude."""
     with pytest.raises(ValueError, match="divider_amplitude_mm must be greater than 0"):
         BinParameters(divisions=2, divider_profile="wave", divider_amplitude_mm=0.0).validate()
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Reject a wave amplitude that would collide")
 def test_validation_rejects_oversized_wave_amplitude() -> None:
     """A wave amplitude that would collide a divider with its neighbour is rejected."""
     with pytest.raises(ValueError, match="divider_amplitude_mm is too large"):
         BinParameters(divisions=2, divider_profile="wave", divider_amplitude_mm=1000.0).validate()
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Skip cutout validation when disabled")
 def test_validation_skips_cutout_checks_when_disabled() -> None:
     """Cutout-fit checks are skipped when cutouts are disabled."""
     BinParameters(cutout_offset_from_edge_mm=1, cutout_radius_mm=600, cutouts_enabled=False).validate()
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Reject cutouts too large for the side")
+def test_validation_rejects_oversized_cutout() -> None:
+    """A cutout offset and radius that cannot fit the side's length is rejected."""
+    with pytest.raises(ValueError, match="cutout"):
+        BinParameters(cutout_offset_from_edge_mm=1, cutout_radius_mm=600).validate()
+
+
+@pytest.mark.scenario("gridfinity-utensil-bin", "Generate bin with Gridfinity height units")
+def test_height_in_units_converts_to_millimetres() -> None:
+    """Gridfinity height units resolve at 7 mm per unit."""
+    params = BinParameters(height_in_units=7)
+    params.validate()
+    assert params.effective_height_mm == pytest.approx(49.0)
+
+
+@pytest.mark.scenario("gridfinity-utensil-bin", "Generate bin with freeform millimetre height")
+def test_freeform_height_mm_is_used_directly() -> None:
+    """A freeform millimetre height is used as-is when units are not given."""
+    params = BinParameters(height_in_units=None, height_mm=55.0)
+    params.validate()
+    assert params.effective_height_mm == pytest.approx(55.0)
+
+
+@pytest.mark.scenario("gridfinity-utensil-bin", "Reject combined height specification")
+def test_validation_rejects_combined_heights() -> None:
+    """Giving both height_in_units and height_mm is a conflict and must be rejected."""
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        BinParameters(height_in_units=8, height_mm=56.0).validate()
+
+
+@pytest.mark.scenario("bin-presets", "Reject an unknown preset")
 def test_resolve_unknown_preset_raises() -> None:
     """An unknown preset name raises with the available names listed."""
     assert "chop-board" in preset_names()
@@ -277,11 +337,14 @@ def test_resolve_unknown_preset_raises() -> None:
         resolve_preset("does-not-exist")
 
 
+@pytest.mark.scenario("print-bed-validation", "Model fits within the build volume")
 def test_check_print_bed_fits() -> None:
     """A model within the build volume on every axis yields no warnings."""
     assert check_print_bed(100.0, 150.0, 50.0, 220.0, 220.0, 240.0) == []
 
 
+@pytest.mark.scenario("print-bed-validation", "Model exceeds the build volume on an axis")
+@pytest.mark.scenario("print-bed-validation", "Warning message is actionable")
 def test_check_print_bed_exceeds_width() -> None:
     """A model wider than bed X warns, naming the dimension and the limit."""
     warnings = check_print_bed(250.0, 100.0, 50.0, 220.0, 220.0, 240.0)
@@ -291,6 +354,7 @@ def test_check_print_bed_exceeds_width() -> None:
     assert "220.0" in warnings[0]
 
 
+@pytest.mark.scenario("print-bed-validation", "Model exceeds the build volume on an axis")
 def test_check_print_bed_exceeds_depth() -> None:
     """A model deeper than bed Y warns about depth."""
     warnings = check_print_bed(100.0, 300.0, 50.0, 220.0, 220.0, 240.0)
@@ -298,6 +362,7 @@ def test_check_print_bed_exceeds_depth() -> None:
     assert "depth" in warnings[0]
 
 
+@pytest.mark.scenario("print-bed-validation", "Model exceeds the build volume on an axis")
 def test_check_print_bed_exceeds_height() -> None:
     """A model taller than the max print height warns about height."""
     warnings = check_print_bed(100.0, 100.0, 300.0, 220.0, 220.0, 240.0)
@@ -305,6 +370,7 @@ def test_check_print_bed_exceeds_height() -> None:
     assert "height" in warnings[0]
 
 
+@pytest.mark.scenario("print-bed-validation", "Model exceeds the build volume on an axis")
 def test_check_print_bed_reports_every_exceeded_axis() -> None:
     """A model exceeding all three limits produces three warnings."""
     assert len(check_print_bed(250.0, 250.0, 250.0, 220.0, 220.0, 240.0)) == 3
