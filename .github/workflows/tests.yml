@@ -1,0 +1,46 @@
+name: Tests
+
+# Lint and test every pull request and every push to main, and upload coverage to Codecov.
+# The gridfinity_build123d dependency is public and fetched over HTTPS, so no secrets are
+# needed anywhere in this workflow; the Codecov upload authenticates via GitHub OIDC.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Cancel a superseded run when new commits arrive on the same branch or pull request.
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Run tests with coverage
+        run: uv run pytest -q --cov --cov-report=term --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          files: coverage.xml
+          use_oidc: true
+          fail_ci_if_error: false

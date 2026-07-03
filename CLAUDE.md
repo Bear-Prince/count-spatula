@@ -40,7 +40,7 @@ pnpm exec openspec --help
 pnpm exec openspec new change "my-change-name"
 ```
 
-Pre-commit hooks run `ruff check`, `markdownlint`, and `yamllint` on commit; `pytest` (with a coverage summary) runs on push. Install hooks with `uv run pre-commit install`.
+Pre-commit hooks run `ruff check`, `markdownlint`, and `yamllint` on commit; `pytest` (with a coverage summary) runs on push. Install hooks with `uv run pre-commit install`. CI (`.github/workflows/tests.yml`) runs ruff and the full suite with coverage on every PR and push to main, uploading to Codecov.
 
 ## Testing conventions
 
