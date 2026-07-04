@@ -153,7 +153,7 @@ def test_cli_no_cutouts_rejected_for_chop_board(capsys: pytest.CaptureFixture[st
     exit_code = main.main(["--preset", "chop-board", "--no-cutouts"])
     output = capsys.readouterr()
     assert exit_code == 2
-    assert "cannot be disabled" in output.out
+    assert "cannot be disabled" in output.err
 
 
 @pytest.mark.scenario("bin-presets", "Unknown preset is rejected at the CLI")
@@ -162,7 +162,7 @@ def test_cli_unknown_preset_returns_non_zero(capsys: pytest.CaptureFixture[str])
     exit_code = main.main(["--preset", "nope"])
     output = capsys.readouterr()
     assert exit_code == 2
-    assert "Unknown preset" in output.out
+    assert "Unknown preset" in output.err
 
 
 @pytest.mark.scenario("gridfinity-utensil-bin", "Reject out-of-range grid size")
@@ -171,7 +171,7 @@ def test_cli_validation_failure_returns_non_zero(capsys: pytest.CaptureFixture[s
     exit_code = main.main(["--grid-x", "0"])
     output = capsys.readouterr()
     assert exit_code == 2
-    assert "grid_x" in output.out
+    assert "grid_x" in output.err
 
 
 @pytest.mark.scenario("multi-format-export", "Missing output directory")
@@ -181,7 +181,29 @@ def test_cli_export_failure_returns_non_zero(capsys: pytest.CaptureFixture[str],
     exit_code = main.main(["--output", str(output_file)])
     output = capsys.readouterr()
     assert exit_code == 2
-    assert "Output directory does not exist" in output.out
+    assert "Output directory does not exist" in output.err
+
+
+def test_cli_rejects_conflicting_format_and_output_extension(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """An explicit --format that disagrees with --output's extension is rejected."""
+    result = _capture_cli(
+        monkeypatch, ["--format", "3mf", "--output", str(tmp_path / "mismatch.stl")]
+    )
+    output = capsys.readouterr()
+    assert result["exit_code"] == 2
+    assert "--format 3mf conflicts with --output's extension" in output.err
+
+
+def test_cli_allows_matching_format_and_output_extension(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """An explicit --format that matches --output's extension is accepted."""
+    result = _capture_cli(
+        monkeypatch, ["--format", "3mf", "--output", str(tmp_path / "match.3mf")]
+    )
+    assert result["exit_code"] == 0
 
 
 @pytest.mark.scenario("print-bed-validation", "Default print volume applied")
