@@ -46,9 +46,10 @@ GRIDFINITY_CLEARANCE_MM = 0.5 * MM  # Total per-axis footprint clearance (bin = 
 DEFAULT_WALL_THICKNESS = 2 * MM  # mm; uniform wall thickness used to derive the default pocket.
 DEFAULT_CUTOUT_OFFSET_UNITS = 1  # Whole Gridfinity units of solid wall reserved at each end by default.
 DEFAULT_CUTOUT_RADIUS = 10 * MM  # mm radius of the cutout's rim fillet (the floor corner stays sharp).
-# The cutout stops this far short of its target internal grid line, so the line itself (and a small
-# margin around it) stays solid, and a base split exactly on that line cuts through solid material.
-CUTOUT_GRID_CLEARANCE_MM = 1 * MM
+# The reserved solid wall at each end is this much shorter than a whole number of grid units, so the
+# cutout's sharp floor edge reaches this far past its target internal grid line -- the line sits just
+# inside the open cutout, and the wall is solid only from this margin further out.
+CUTOUT_GRID_ALLOWANCE_MM = 1 * MM
 
 # Divider profiles. A "straight" divider is a flat slab; a "wave" divider follows a single S-curve
 # (one sine period) along the pocket length so that tapered cutlery can nest in alternating channels.
@@ -125,17 +126,18 @@ class BinParameters:
     def cutout_offset_start_from_edge_mm(self) -> float:
         """Return the start-end cutout offset in millimetres, derived from whole grid units.
 
-        The cutout's floor stops ``CUTOUT_GRID_CLEARANCE_MM`` short of the target internal grid
-        line, so the line itself (and a small margin around it) stays solid -- a base split exactly
-        on that line always cuts through uninterrupted material. Unlike the cutout's rim, the floor
-        has a sharp (unfilleted) corner, so its position does not depend on ``cutout_radius_mm``.
+        The reserved solid wall is ``CUTOUT_GRID_ALLOWANCE_MM`` shorter than a whole number of grid
+        units, so the cutout's sharp floor edge reaches 1 mm past the target internal grid line --
+        i.e. the line itself sits just inside the open cutout, not the solid wall. Unlike the
+        cutout's rim, the floor has a sharp (unfilleted) corner, so its position does not depend on
+        ``cutout_radius_mm``.
         """
-        return self.cutout_offset_start_units * GRIDFINITY_PITCH_MM + CUTOUT_GRID_CLEARANCE_MM
+        return self.cutout_offset_start_units * GRIDFINITY_PITCH_MM - CUTOUT_GRID_ALLOWANCE_MM
 
     @property
     def cutout_offset_end_from_edge_mm(self) -> float:
         """Return the end-end cutout offset in millimetres; see ``cutout_offset_start_from_edge_mm``."""
-        return self.cutout_offset_end_units * GRIDFINITY_PITCH_MM + CUTOUT_GRID_CLEARANCE_MM
+        return self.cutout_offset_end_units * GRIDFINITY_PITCH_MM - CUTOUT_GRID_ALLOWANCE_MM
 
     @property
     def cutout_length_start_mm(self) -> float:

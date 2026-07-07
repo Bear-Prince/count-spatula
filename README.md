@@ -109,12 +109,10 @@ Each side cutout is a scoop with a sharp floor corner and one filleted corner
 
 `--cutout-offset-units` sets how many whole Gridfinity grid units of solid wall are reserved at each
 end, as one value (applies to both ends, default 1) or two (`start end`, set independently — handy
-for aligning bins of different lengths at a shared end, e.g. `--cutout-offset-units 1 2`). Each end's
-millimetre value is derived so its sharp floor corner stops a fixed 1 mm short of the corresponding
-internal grid line, regardless of the chosen radius. That means a bin can be split along that grid
-line in a slicer and the cut always lands on solid, uninterrupted material. (The rim fillet may
-still overhang the line a little; only the sharp floor corner is guaranteed clear, which is the part
-that matters for a clean base split.)
+for aligning bins of different lengths at a shared end, e.g. `--cutout-offset-units 1 2`). The
+reserved solid wall is a fixed 1 mm shorter than that whole number of units, so the sharp floor
+corner reaches 1 mm past the corresponding internal grid line — the line itself sits just inside the
+open cutout, not the solid wall — regardless of the chosen radius.
 
 ### Other options
 

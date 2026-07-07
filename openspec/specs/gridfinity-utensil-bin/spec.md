@@ -175,13 +175,12 @@ The cutout profile's floor-to-wall corner SHALL be sharp (unfilleted) on each en
 corner, where the wall flares out to its widest point, SHALL be rounded, with one shared radius
 (`cutout_radius_mm`, default 10 mm). The cutout offset SHALL be independently configurable at each end, as a
 whole number of Gridfinity units of solid wall (`cutout_offset_start_units` and `cutout_offset_end_units`,
-each defaulting to 1), so bins of different lengths can align their cutouts at a shared end. Each end's
-offset's millimetre value SHALL be derived so the sharp floor edge stops a fixed 1 mm
-(`CUTOUT_GRID_CLEARANCE_MM`) short of that end's corresponding internal grid line — not past it — so the
-line itself, and a small margin around it, stays solid; a base split exactly on that grid line always cuts
-through uninterrupted material. Because the floor is unfilleted, its position does not depend on
-`cutout_radius_mm`. The wider rim MAY still lap over the grid line — the floor is what governs a clean base
-cut.
+each defaulting to 1), so bins of different lengths can align their cutouts at a shared end. The reserved
+solid wall at each end SHALL be a fixed 1 mm (`CUTOUT_GRID_ALLOWANCE_MM`) shorter than that whole number of
+grid units, so the sharp floor edge reaches 1 mm past that end's corresponding internal grid line — the line
+itself sits just inside the open cutout, not the solid wall — matching a Gridfinity split convention where
+the reserved unit is 1 mm undersized relative to the nominal grid pitch. Because the floor is unfilleted, its
+position does not depend on `cutout_radius_mm`.
 
 #### Scenario: Cutouts enabled by default
 
@@ -199,23 +198,23 @@ cut.
 - **THEN** both opposing walls receive an identical slot, starting at the inner floor, removing no material
   from the base below it
 
-#### Scenario: Cutout floor stops short of the grid line
+#### Scenario: Cutout floor reaches past the grid line
 
 - **WHEN** a bin is generated with cutouts enabled and the default offset of one grid unit at each end
-- **THEN** the sharp floor edge stops exactly 1 mm short of each end's internal grid line, so a base split on
-  that line cuts through solid, uninterrupted material
+- **THEN** the sharp floor edge reaches exactly 1 mm past each end's internal grid line, so the line sits
+  just inside the open cutout
 
-#### Scenario: Grid-line clearance holds regardless of radius
+#### Scenario: Grid-line overshoot holds regardless of radius
 
 - **WHEN** a bin is generated with cutouts enabled and a non-default `cutout_radius_mm`
-- **THEN** the floor still stops exactly 1 mm short of the target grid line on each end, because the floor's
+- **THEN** the floor still reaches exactly 1 mm past the target grid line on each end, because the floor's
   position does not depend on the radius
 
 #### Scenario: Independent per-end cutout offsets
 
 - **WHEN** a bin is generated with different `cutout_offset_start_units` and `cutout_offset_end_units`
-- **THEN** the cutout's floor length differs on each end accordingly, and each end's edge still stops 1 mm
-  short of its own target grid line
+- **THEN** the cutout's floor length differs on each end accordingly, and each end's edge still reaches 1 mm
+  past its own target grid line
 
 #### Scenario: Cutout passes through dividers
 

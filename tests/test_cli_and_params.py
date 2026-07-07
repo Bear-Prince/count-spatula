@@ -89,7 +89,7 @@ def test_cli_no_cutouts_flag_disables_cutouts(monkeypatch: pytest.MonkeyPatch, t
     assert result["params"].cutouts_enabled is False
 
 
-@pytest.mark.scenario("gridfinity-utensil-bin", "Cutout floor stops short of the grid line")
+@pytest.mark.scenario("gridfinity-utensil-bin", "Cutout floor reaches past the grid line")
 def test_cli_cutout_offset_units_single_value_applies_to_both_ends(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

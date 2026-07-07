@@ -5,7 +5,7 @@ from build123d import Box, BuildPart, Location, Mode, add
 from gridfinity_build123d import BaseEqual
 
 from cutlery_bin import (
-    CUTOUT_GRID_CLEARANCE_MM,
+    CUTOUT_GRID_ALLOWANCE_MM,
     GRIDFINITY_CLEARANCE_MM,
     GRIDFINITY_PITCH_MM,
     BinParameters,
@@ -17,16 +17,21 @@ from cutlery_bin import (
 )
 
 
-def _start_grid_line_clearance(params: BinParameters) -> float:
-    """Return how far short of its target grid line the cutout's sharp floor edge stops (start side)."""
+def _start_grid_line_overshoot(params: BinParameters) -> float:
+    """Return how far past its target grid line the cutout's sharp floor edge reaches (start side).
+
+    The reserved solid wall is ``CUTOUT_GRID_ALLOWANCE_MM`` shorter than a whole number of grid
+    units, so the floor edge lands this far past the line -- the line itself sits just inside the
+    open cutout, not the solid wall.
+    """
     gridline = params.side_half_length_mm - params.cutout_offset_start_units * GRIDFINITY_PITCH_MM
-    return gridline - params.cutout_length_start_mm
+    return params.cutout_length_start_mm - gridline
 
 
-def _end_grid_line_clearance(params: BinParameters) -> float:
-    """Return how far short of its target grid line the cutout's sharp floor edge stops (end side)."""
+def _end_grid_line_overshoot(params: BinParameters) -> float:
+    """Return how far past its target grid line the cutout's sharp floor edge reaches (end side)."""
     gridline = params.side_half_length_mm - params.cutout_offset_end_units * GRIDFINITY_PITCH_MM
-    return gridline - params.cutout_length_end_mm
+    return params.cutout_length_end_mm - gridline
 
 
 def _base_footprint(grid_x: int, grid_y: int) -> tuple:
@@ -71,10 +76,12 @@ _W_CUT_MID_BOX = ((-13.25, 0.0, 40.0), (6.0, 30.0, 30.0))
 # inside the base where the Gridfinity grooves live. A correctly-placed divider adds nothing here.
 _W_SUBFLOOR_BOX = ((-13.25, 0.0, 0.0), (4.0, 40.0, 7.0))
 
-# A razor-thin probe right at true floor level (floor_z ~ 3.902), straddling the chop bin's +/-42 mm
-# internal grid line: with the sharp-floor design the cutout's edge stops short of the line, so this
-# region should be solid (unlike the pre-fix design, where the cutout crossed the line at floor level).
+# Razor-thin probes right at true floor level (floor_z ~ 3.902) for the chop bin's +/-42 mm internal
+# grid line: the reserved solid wall is 1 mm shorter than a whole number of grid units, so the
+# cutout's sharp floor edge reaches 1 mm past the line (transition at Y=43, not Y=42) -- the line
+# itself sits just inside the open cutout, and the wall is only solid from Y=43 onward.
 _GRID_LINE_FLOOR_BOX = ((81.0, 42.0, 3.927), (4.0, 0.6, 0.05))
+_PAST_GRID_LINE_FLOOR_BOX = ((81.0, 44.0, 3.927), (4.0, 0.6, 0.05))
 
 
 @pytest.fixture(scope="module")
@@ -187,15 +194,18 @@ def test_side_cutout_removes_material_from_walls(bins: dict) -> None:
     assert removed > 1000.0, f"Expected the side wall to be slotted, only {removed:.1f} mm^3 removed"
 
 
-@pytest.mark.scenario("gridfinity-utensil-bin", "Cutout floor stops short of the grid line")
-def test_grid_line_is_solid_at_floor_level(bins: dict) -> None:
-    """A razor-thin probe at true floor level, at the +/-42 mm grid line, finds solid material.
+@pytest.mark.scenario("gridfinity-utensil-bin", "Cutout floor reaches past the grid line")
+def test_grid_line_sits_inside_the_open_cutout(bins: dict) -> None:
+    """A razor-thin probe at true floor level: the grid line itself is open, 1 mm inside the cutout.
 
-    Confirms the sign of the grid-clearance offset: the cutout's sharp floor edge stops short of
-    the line rather than crossing it, so a base split exactly on the line cuts through solid wall.
+    Confirms the sign of the grid-clearance offset: the reserved solid wall is 1 mm shorter than a
+    whole number of grid units, so the cutout's sharp floor edge reaches 1 mm past the target grid
+    line -- the line sits just inside the open cutout, and the wall is solid from 1 mm further out.
     """
-    volume = _region_volume(bins["chop"], *_GRID_LINE_FLOOR_BOX)
-    assert volume > 0.01, f"Expected solid material at the grid line, found {volume:.4f} mm^3"
+    at_line = _region_volume(bins["chop"], *_GRID_LINE_FLOOR_BOX)
+    past_line = _region_volume(bins["chop"], *_PAST_GRID_LINE_FLOOR_BOX)
+    assert at_line < 0.005, f"Expected the grid line itself to be open, found {at_line:.4f} mm^3"
+    assert past_line > 0.01, f"Expected solid material just past the grid line, found {past_line:.4f} mm^3"
 
 
 @pytest.mark.scenario("gridfinity-utensil-bin", "Independent per-end cutout offsets")
@@ -367,21 +377,21 @@ def test_validation_rejects_offset_unit_below_one() -> None:
         BinParameters(cutout_offset_start_units=0).validate()
 
 
-@pytest.mark.scenario("gridfinity-utensil-bin", "Cutout floor stops short of the grid line")
-def test_default_cutout_floor_stops_short_of_grid_line() -> None:
-    """The default bin's sharp cutout floor edge stops exactly the grid clearance short of the line."""
+@pytest.mark.scenario("gridfinity-utensil-bin", "Cutout floor reaches past the grid line")
+def test_default_cutout_floor_reaches_past_grid_line() -> None:
+    """The default bin's sharp cutout floor edge reaches exactly the grid allowance past the line."""
     params = BinParameters()
     params.validate()
-    assert _start_grid_line_clearance(params) == pytest.approx(CUTOUT_GRID_CLEARANCE_MM)
-    assert _end_grid_line_clearance(params) == pytest.approx(CUTOUT_GRID_CLEARANCE_MM)
+    assert _start_grid_line_overshoot(params) == pytest.approx(CUTOUT_GRID_ALLOWANCE_MM)
+    assert _end_grid_line_overshoot(params) == pytest.approx(CUTOUT_GRID_ALLOWANCE_MM)
 
 
-@pytest.mark.scenario("gridfinity-utensil-bin", "Grid-line clearance holds regardless of radius")
-def test_cutout_floor_clearance_holds_for_custom_radius() -> None:
-    """The 1 mm grid clearance holds even with a non-default cutout radius (the floor is sharp)."""
+@pytest.mark.scenario("gridfinity-utensil-bin", "Grid-line overshoot holds regardless of radius")
+def test_cutout_floor_overshoot_holds_for_custom_radius() -> None:
+    """The 1 mm grid overshoot holds even with a non-default cutout radius (the floor is sharp)."""
     params = BinParameters(cutout_radius_mm=8.0)
     params.validate()
-    assert _start_grid_line_clearance(params) == pytest.approx(CUTOUT_GRID_CLEARANCE_MM)
+    assert _start_grid_line_overshoot(params) == pytest.approx(CUTOUT_GRID_ALLOWANCE_MM)
 
 
 @pytest.mark.scenario("gridfinity-utensil-bin", "Independent per-end cutout offsets")
@@ -390,18 +400,18 @@ def test_asymmetric_offsets_give_different_cutout_lengths() -> None:
     params = BinParameters(grid_y=5, cutout_offset_start_units=1, cutout_offset_end_units=2)
     params.validate()
     assert params.cutout_length_start_mm != pytest.approx(params.cutout_length_end_mm)
-    assert _start_grid_line_clearance(params) == pytest.approx(CUTOUT_GRID_CLEARANCE_MM)
-    assert _end_grid_line_clearance(params) == pytest.approx(CUTOUT_GRID_CLEARANCE_MM)
+    assert _start_grid_line_overshoot(params) == pytest.approx(CUTOUT_GRID_ALLOWANCE_MM)
+    assert _end_grid_line_overshoot(params) == pytest.approx(CUTOUT_GRID_ALLOWANCE_MM)
 
 
 @pytest.mark.scenario("bin-presets", "Generate a bin from a preset")
-def test_chop_preset_cutout_floor_clears_grid_line() -> None:
-    """The chop-board preset's cutout floor stops short of its +/-42 mm internal grid lines."""
+def test_chop_preset_cutout_floor_past_grid_line() -> None:
+    """The chop-board preset's cutout floor reaches past its +/-42 mm internal grid lines."""
     chop = resolve_preset("chop-board")
     chop.validate()
     assert chop.cutout_offset_start_units == 2
     assert chop.cutout_offset_end_units == 2
-    assert _start_grid_line_clearance(chop) == pytest.approx(CUTOUT_GRID_CLEARANCE_MM)
+    assert _start_grid_line_overshoot(chop) == pytest.approx(CUTOUT_GRID_ALLOWANCE_MM)
 
 
 @pytest.mark.scenario("gridfinity-utensil-bin", "Generate bin with Gridfinity height units")

@@ -3,9 +3,9 @@
 <desc>A labelled side-on view of one end of the cutout slot: a flat floor meeting a straight vertical
 side wall at a sharp, unfilleted corner, then a single filleted corner where the wall flares out to
 the rim, the widest point. The cutout offset is measured in whole Gridfinity grid units from the
-outer wall edge; its derived millimetre value stops the sharp floor corner a fixed clearance short of
-the corresponding internal grid line, so the line itself stays solid and a base split there always
-cuts through uninterrupted material.</desc>
+outer wall edge; the reserved solid wall is a fixed 1 mm shorter than that whole number of units, so
+the sharp floor corner reaches 1 mm past the corresponding internal grid line -- the line itself sits
+just inside the open cutout, not the solid wall.</desc>
 <style>
   .lbl { font-family: system-ui, sans-serif; font-size: 15px; fill: var(--foreground, #1f2328); }
   .lbl-sm { font-family: system-ui, sans-serif; font-size: 13px; fill: var(--muted-foreground, #6b7280); }
@@ -24,56 +24,51 @@ cuts through uninterrupted material.</desc>
 <line x1="100" y1="60" x2="100" y2="380" class="wallcentre"/>
 <text x="68" y="55" class="lbl-sm">centre</text>
 
-<!-- Sharp floor-to-wall corner, well SHORT of the grid line: solid material spans from here,
-     through the grid line, out to the wall's outer end. -->
-<line x1="352" y1="30" x2="352" y2="440" class="gridline"/>
-<text x="358" y="455" class="lbl-sm" fill="var(--destructive,#dc2626)">internal grid line (1 unit = 42mm)</text>
+<!-- Grid line sits INSIDE the open cutout, 1mm before the sharp corner. Solid material begins only
+     after the corner (to the right). -->
+<line x1="330" y1="30" x2="330" y2="440" class="gridline"/>
+<text x="336" y="455" class="lbl-sm" fill="var(--destructive,#dc2626)">internal grid line (1 unit = 42mm)</text>
 
-<!-- floor -> SHARP corner -> straight wall -> rim fillet -> rim/opening -->
-<path d="M 100,340 L 330,340 L 330,150 Q 330,110 370,110 L 440,110"
+<!-- floor -> SHARP corner (past the grid line) -> straight wall -> rim fillet -> rim/opening -->
+<path d="M 100,340 L 352,340 L 352,150 Q 352,62 392,62 L 396,60 L 440,60"
       class="profile" fill="none"/>
 
 <text x="150" y="365" class="lbl-part">floor</text>
-<text x="150" y="382" class="lbl-sm">flat base of the slot</text>
+<text x="150" y="382" class="lbl-sm">flat base of the slot (open)</text>
 
-<line x1="330" y1="330" x2="270" y2="300" class="leader"/>
+<line x1="352" y1="330" x2="290" y2="300" class="leader"/>
 <text x="185" y="295" class="lbl-part">sharp corner</text>
 <text x="150" y="312" class="lbl-sm">unfilleted -- position independent of cutout_radius_mm</text>
 
-<text x="345" y="225" class="lbl-part">side wall</text>
-<text x="345" y="242" class="lbl-sm">straight, vertical</text>
+<text x="365" y="225" class="lbl-part">side wall</text>
+<text x="365" y="242" class="lbl-sm">straight, vertical (solid)</text>
 
-<line x1="345" y1="128" x2="440" y2="160" class="leader"/>
-<text x="446" y="168" class="lbl-part">rim fillet</text>
-<text x="446" y="185" class="lbl-sm">rounds the wall out to the rim (cutout_radius_mm)</text>
+<line x1="365" y1="100" x2="440" y2="130" class="leader"/>
+<text x="446" y="138" class="lbl-part">rim fillet</text>
+<text x="446" y="155" class="lbl-sm">rounds the wall out to the rim (cutout_radius_mm)</text>
 
-<circle cx="440" cy="110" r="4" class="pt"/>
-<line x1="440" y1="110" x2="440" y2="70" class="leader"/>
-<text x="446" y="65" class="lbl-part">rim</text>
-<text x="446" y="82" class="lbl-sm">widest point of the opening</text>
+<circle cx="440" cy="60" r="4" class="pt"/>
+<line x1="440" y1="60" x2="440" y2="30" class="leader"/>
+<text x="446" y="25" class="lbl-part">rim</text>
+<text x="446" y="42" class="lbl-sm">widest point of the opening</text>
 
-<!-- dimension: cutout_offset_*_units -->
+<!-- dimension: cutout_offset_*_units (measured from the outer edge, off-canvas to the right, to the
+     sharp corner) -->
 <line x1="100" y1="470" x2="352" y2="470" class="dim"/>
 <line x1="100" y1="462" x2="100" y2="478" class="dim"/>
 <line x1="352" y1="462" x2="352" y2="478" class="dim"/>
-<text x="115" y="492" class="lbl-sm">cutout_offset_start_units x 42mm (solid wall to the grid line)</text>
+<text x="105" y="492" class="lbl-sm">cutout_length_start_mm (sharp floor edge, from centre)</text>
 
-<!-- dimension: sharp floor corner position -->
-<line x1="100" y1="20" x2="330" y2="20" class="dim"/>
-<line x1="100" y1="12" x2="100" y2="28" class="dim"/>
-<line x1="330" y1="12" x2="330" y2="28" class="dim"/>
-<text x="150" y="15" class="lbl-sm">cutout_length_start_mm (sharp floor edge)</text>
-
-<!-- the key relationship: corner stops short of the line -->
+<!-- the key relationship: corner reaches 1mm PAST the line -->
 <line x1="330" y1="150" x2="352" y2="150" class="dim"/>
-<text x="336" y="140" class="lbl-sm" fill="var(--destructive,#dc2626)">CUTOUT_GRID_CLEARANCE_MM</text>
-<text x="336" y="170" class="lbl" fill="var(--destructive,#dc2626)">corner stops here, short of</text>
-<text x="336" y="188" class="lbl" fill="var(--destructive,#dc2626)">the line -- material solid</text>
-<text x="336" y="206" class="lbl" fill="var(--destructive,#dc2626)">from here through the line</text>
+<text x="336" y="140" class="lbl-sm" fill="var(--destructive,#dc2626)">CUTOUT_GRID_ALLOWANCE_MM</text>
+<text x="336" y="180" class="lbl" fill="var(--destructive,#dc2626)">corner reaches 1mm PAST the</text>
+<text x="336" y="198" class="lbl" fill="var(--destructive,#dc2626)">line -- the line sits just inside</text>
+<text x="336" y="216" class="lbl" fill="var(--destructive,#dc2626)">the open cutout, not solid wall</text>
 
-<text x="470" y="300" class="lbl-sm">the rim fillet may still overhang the</text>
-<text x="470" y="318" class="lbl-sm">grid line -- only the sharp floor edge</text>
-<text x="470" y="336" class="lbl-sm">is guaranteed clear, for a base split</text>
+<text x="470" y="300" class="lbl-sm">the reserved solid wall (to the</text>
+<text x="470" y="318" class="lbl-sm">outer edge) is 1mm shorter than</text>
+<text x="470" y="336" class="lbl-sm">a whole number of grid units</text>
 
 <text x="470" y="400" class="lbl-sm">the other end has its own</text>
 <text x="470" y="418" class="lbl-sm">cutout_offset_end_units, and may</text>
