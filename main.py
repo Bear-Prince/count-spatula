@@ -107,8 +107,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--format",
         choices=["stl", "3mf"],
-        default="stl",
-        help="Output file format when --output is omitted. Default: stl.",
+        default=None,
+        help="Output file format when --output is omitted. Default: stl. Conflicts with an --output "
+        "extension that names a different format.",
     )
     parser.add_argument(
         "--output",
@@ -185,7 +186,16 @@ def main(argv: list[str] | None = None) -> int:
     try:
         params = create_parameters(args)
         params.validate()
-        output_path = args.output if args.output is not None else default_output_path(params, args.format)
+        fmt = args.format if args.format is not None else "stl"
+        if args.output is not None and args.format is not None:
+            output_ext = args.output.suffix.lstrip(".").lower()
+            if output_ext != args.format:
+                msg = (
+                    f"--format {args.format} conflicts with --output's extension "
+                    f"({args.output.suffix or '<none>'}); use matching values or drop one of them"
+                )
+                raise ValueError(msg)
+        output_path = args.output if args.output is not None else default_output_path(params, fmt)
         if not output_path.parent.exists():
             msg = f"Output directory does not exist: {output_path.parent}"
             raise FileNotFoundError(msg)
@@ -195,10 +205,10 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Warning: {warning}", file=sys.stderr)
         exported_file = export_bin(part, output_path)
     except (ValueError, FileNotFoundError) as exc:
-        print(f"Error: {exc}")
+        print(f"Error: {exc}", file=sys.stderr)
         return 2
     except OSError as exc:
-        print(f"Error: Failed to write output: {exc}")
+        print(f"Error: Failed to write output: {exc}", file=sys.stderr)
         return 2
 
     print(f"Exported: {exported_file}")

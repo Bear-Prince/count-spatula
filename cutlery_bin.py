@@ -22,7 +22,6 @@ from build123d import (
     BuildLine,
     BuildPart,
     BuildSketch,
-    Face,
     Line,
     Locations,
     Mode,
@@ -172,8 +171,12 @@ class BinParameters:
             errors.append("height_in_units and height_mm are mutually exclusive; specify only one")
         elif self.height_in_units is None and self.height_mm is None:
             errors.append("one of height_in_units or height_mm must be set")
-        elif not 7.0 < self.effective_height_mm <= 200.0:
-            errors.append("effective height must be greater than 7 mm and at most 200 mm")
+        elif not GRIDFINITY_HEIGHT_UNIT_MM < self.effective_height_mm <= 200.0:
+            errors.append(
+                "effective height (the wall height above the inner floor, not the bin's total height) "
+                f"must be greater than {GRIDFINITY_HEIGHT_UNIT_MM:g} mm (one Gridfinity height unit) "
+                "and at most 200 mm"
+            )
 
         if self.wall_thickness_mm <= 0:
             errors.append("wall_thickness_mm must be greater than 0")
@@ -203,6 +206,15 @@ class BinParameters:
             errors.append("divisions must be at least 1")
         if self.divider_thickness_mm <= 0:
             errors.append("divider_thickness_mm must be greater than 0")
+        elif self.divisions >= 2:
+            # This applies to every profile: a straight divider is exactly as wide as the wave
+            # divider's centreline band, so it needs the same minimum printable gap to its neighbour.
+            column_pitch = self.effective_pocket_width_mm / self.divisions
+            if column_pitch - self.divider_thickness_mm < MIN_CHANNEL_GAP:
+                errors.append(
+                    "divider_thickness_mm is too large for this divider spacing; columns are "
+                    f"{column_pitch:.2f} mm apart and must leave a {MIN_CHANNEL_GAP:.1f} mm printable gap"
+                )
 
         if self.divider_profile not in DIVIDER_PROFILES:
             allowed = ", ".join(DIVIDER_PROFILES)
@@ -371,7 +383,9 @@ class KitchenBin(BasePartObject):
         height = params.effective_height_mm
 
         with BuildPart() as build:
-            add(BaseEqual(grid_x=params.grid_x, grid_y=params.grid_y, mode=mode))
+            # This inner Mode.ADD is independent of the `mode` parameter, which controls how the
+            # finished bin combines into an enclosing build context (see super().__init__ below).
+            add(BaseEqual(grid_x=params.grid_x, grid_y=params.grid_y, mode=Mode.ADD))
 
             # The top face of the Gridfinity base is the inner floor of the bin.
             base_top = build.faces().sort_by(Axis.Z)[-1]
@@ -495,11 +509,6 @@ class CutleryBin(KitchenBin):
                 Polyline(*outline, close=True)
             make_face()
         extrude(to_extrude=band.sketch.faces(), amount=height)
-
-    @property
-    def top(self) -> Face:
-        """Return the highest face of the bin."""
-        return self.faces().sort_by(Axis.Z)[-1]
 
 
 def create_kitchen_bin(params: BinParameters | None = None) -> KitchenBin:

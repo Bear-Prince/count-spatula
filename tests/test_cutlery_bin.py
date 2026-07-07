@@ -9,6 +9,7 @@ from cutlery_bin import (
     GRIDFINITY_CLEARANCE_MM,
     GRIDFINITY_PITCH_MM,
     BinParameters,
+    KitchenBin,
     check_print_bed,
     create_cutlery_bin,
     create_kitchen_bin,
@@ -137,6 +138,19 @@ def test_wall_outline_matches_base_footprint(bins: dict) -> None:
     bbox = bins["default"].bounding_box()
     assert abs(bbox.size.X - base_x) < 0.2
     assert abs(bbox.size.Y - base_y) < 0.2
+
+
+def test_kitchen_bin_mode_subtract_combines_into_enclosing_part() -> None:
+    """Building a KitchenBin with mode=Mode.SUBTRACT inside an enclosing part combines correctly.
+
+    `mode` controls how the finished bin combines into an enclosing BuildPart context; it must not
+    also be forwarded to the bin's own internal BuildPart, or the internal Gridfinity base ends up
+    being added into an otherwise-empty internal part with nothing left to subtract from.
+    """
+    with BuildPart() as enclosing:
+        Box(200, 200, 200)
+        KitchenBin(BinParameters(), mode=Mode.SUBTRACT)
+    assert 0 < enclosing.part.volume < 200**3
 
 
 @pytest.mark.scenario("gridfinity-utensil-bin", "Generate a KitchenBin from explicit valid parameters")
@@ -313,6 +327,12 @@ def test_validation_rejects_invalid_divisions() -> None:
     """Validation rejects a division count below 1."""
     with pytest.raises(ValueError, match="divisions"):
         BinParameters(divisions=0).validate()
+
+
+def test_validation_rejects_overlapping_straight_dividers() -> None:
+    """A straight divider count too high for the pocket width to leave a printable gap is rejected."""
+    with pytest.raises(ValueError, match="divider_thickness_mm is too large"):
+        BinParameters(divisions=50).validate()
 
 
 @pytest.mark.scenario("gridfinity-utensil-bin", "Default profile preserves straight geometry")
