@@ -53,7 +53,8 @@ profile — the wave amplitude. For the `wave` profile the amplitude plus half t
 within the per-column spacing with clearance, so a divider cannot collide with its neighbour or the pocket
 wall. For side cutouts, each of `cutout_offset_start_units` and `cutout_offset_end_units` MUST be at least 1;
 their combined gap in whole grid units (`grid_y − cutout_offset_start_units − cutout_offset_end_units`) MUST
-be at least 1; the two rims MUST NOT meet in the middle
+be at least 1; each end's resulting cutout floor length (`cutout_length_start_mm` / `cutout_length_end_mm`)
+MUST be positive; the two rims MUST NOT meet in the middle
 (`cutout_arc_start_mm + cutout_arc_end_mm < grid_y × 42`); and `cutout_radius_mm` MUST be less than the
 effective bin height, so the rim fillet has room to complete within the wall.
 
@@ -225,6 +226,13 @@ position does not depend on `cutout_radius_mm`.
 #### Scenario: Reject cutouts too large for the side
 
 - **WHEN** cutouts are enabled and the two ends' rims would meet in the middle of the wall
+- **THEN** the system refuses geometry generation with an actionable validation message
+
+#### Scenario: Reject an offset combination with a non-positive cutout length
+
+- **WHEN** cutouts are enabled and an offset satisfies the whole-unit gap requirement but still leaves a
+  non-positive floor length (`cutout_length_start_mm` or `cutout_length_end_mm`) once converted to
+  millimetres
 - **THEN** the system refuses geometry generation with an actionable validation message
 
 #### Scenario: Skip cutout validation when disabled

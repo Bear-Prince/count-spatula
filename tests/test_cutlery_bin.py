@@ -395,6 +395,17 @@ def test_validation_rejects_offset_unit_below_one() -> None:
     """Each end's offset must reserve at least one whole grid unit."""
     with pytest.raises(ValueError, match="cutout_offset_start_units must be at least 1"):
         BinParameters(cutout_offset_start_units=0).validate()
+    with pytest.raises(ValueError, match="cutout_offset_end_units must be at least 1"):
+        BinParameters(cutout_offset_end_units=0).validate()
+
+
+@pytest.mark.scenario("gridfinity-utensil-bin", "Reject an offset combination with a non-positive cutout length")
+def test_validation_rejects_offset_with_non_positive_cutout_length() -> None:
+    """A whole-unit gap of exactly 1 can still leave a non-positive floor length once converted to mm."""
+    params = BinParameters(grid_y=6, cutout_offset_start_units=4, cutout_offset_end_units=1)
+    assert params.cutout_length_start_mm <= 0
+    with pytest.raises(ValueError, match="is too large for grid_y"):
+        params.validate()
 
 
 @pytest.mark.scenario("gridfinity-utensil-bin", "Cutout floor reaches past the grid line")
