@@ -51,7 +51,12 @@ printable ranges with actionable error messages, covering grid size, height, the
 enabled side cutouts, and (for a `CutleryBin`) the divider count, thickness, profile, and — for the `wave`
 profile — the wave amplitude. For the `wave` profile the amplitude plus half the divider thickness MUST stay
 within the per-column spacing with clearance, so a divider cannot collide with its neighbour or the pocket
-wall.
+wall. For side cutouts, each of `cutout_offset_start_units` and `cutout_offset_end_units` MUST be at least 1;
+their combined gap in whole grid units (`grid_y − cutout_offset_start_units − cutout_offset_end_units`) MUST
+be at least 1; each end's resulting cutout floor length (`cutout_length_start_mm` / `cutout_length_end_mm`)
+MUST be positive; the two rims MUST NOT meet in the middle
+(`cutout_arc_start_mm + cutout_arc_end_mm < grid_y × 42`); and `cutout_radius_mm` MUST be less than the
+effective bin height, so the rim fillet has room to complete within the wall.
 
 #### Scenario: Reject out-of-range grid size
 
@@ -79,6 +84,24 @@ wall.
 - **WHEN** the `wave` profile is selected with an amplitude of zero or less
 - **THEN** the system refuses geometry generation with a message to set a positive amplitude or use the
   `straight` profile
+
+#### Scenario: Reject cutouts on a bin shallower than three units
+
+- **WHEN** cutouts are enabled with the default one-unit offsets on a bin with `grid_y` of 2
+- **THEN** the system refuses geometry generation, because the combined gap in whole grid units
+  (`grid_y − cutout_offset_start_units − cutout_offset_end_units`) is less than 1
+
+#### Scenario: Reject an offset unit below one
+
+- **WHEN** cutouts are enabled and either `cutout_offset_start_units` or `cutout_offset_end_units` is less
+  than 1
+- **THEN** the system refuses geometry generation with an actionable message
+
+#### Scenario: Reject a radius too large for the wall height
+
+- **WHEN** cutouts are enabled and `cutout_radius_mm` is at or beyond the bin's effective height
+- **THEN** the system refuses geometry generation with an actionable message, because the rim fillet would
+  not fit within the wall
 
 ### Requirement: Pocket interior
 
@@ -149,6 +172,17 @@ the two opposing side walls perpendicular to the X axis — and through any `Cut
 parallel to those walls — from the inner floor to the top of the walls, leaving the Gridfinity base intact.
 When disabled, the side walls and dividers are solid.
 
+The cutout profile's floor-to-wall corner SHALL be sharp (unfilleted) on each end; only the wall-to-rim
+corner, where the wall flares out to its widest point, SHALL be rounded, with one shared radius
+(`cutout_radius_mm`, default 10 mm). The cutout offset SHALL be independently configurable at each end, as a
+whole number of Gridfinity units of solid wall (`cutout_offset_start_units` and `cutout_offset_end_units`,
+each defaulting to 1), so bins of different lengths can align their cutouts at a shared end. The reserved
+solid wall at each end SHALL be a fixed 1 mm (`CUTOUT_GRID_ALLOWANCE_MM`) shorter than that whole number of
+grid units, so the sharp floor edge reaches 1 mm past that end's corresponding internal grid line — the line
+itself sits just inside the open cutout, not the solid wall — matching a Gridfinity split convention where
+the reserved unit is 1 mm undersized relative to the nominal grid pitch. Because the floor is unfilleted, its
+position does not depend on `cutout_radius_mm`.
+
 #### Scenario: Cutouts enabled by default
 
 - **WHEN** a bin is generated without specifying `cutouts_enabled`
@@ -165,6 +199,24 @@ When disabled, the side walls and dividers are solid.
 - **THEN** both opposing walls receive an identical slot, starting at the inner floor, removing no material
   from the base below it
 
+#### Scenario: Cutout floor reaches past the grid line
+
+- **WHEN** a bin is generated with cutouts enabled and the default offset of one grid unit at each end
+- **THEN** the sharp floor edge reaches exactly 1 mm past each end's internal grid line, so the line sits
+  just inside the open cutout
+
+#### Scenario: Grid-line overshoot holds regardless of radius
+
+- **WHEN** a bin is generated with cutouts enabled and a non-default `cutout_radius_mm`
+- **THEN** the floor still reaches exactly 1 mm past the target grid line on each end, because the floor's
+  position does not depend on the radius
+
+#### Scenario: Independent per-end cutout offsets
+
+- **WHEN** a bin is generated with different `cutout_offset_start_units` and `cutout_offset_end_units`
+- **THEN** the cutout's floor length differs on each end accordingly, and each end's edge still reaches 1 mm
+  past its own target grid line
+
 #### Scenario: Cutout passes through dividers
 
 - **WHEN** cutouts are enabled on a `CutleryBin` with two or more columns
@@ -173,7 +225,14 @@ When disabled, the side walls and dividers are solid.
 
 #### Scenario: Reject cutouts too large for the side
 
-- **WHEN** cutouts are enabled and the cutout offset and radius cannot fit within the side's available length
+- **WHEN** cutouts are enabled and the two ends' rims would meet in the middle of the wall
+- **THEN** the system refuses geometry generation with an actionable validation message
+
+#### Scenario: Reject an offset combination with a non-positive cutout length
+
+- **WHEN** cutouts are enabled and an offset satisfies the whole-unit gap requirement but still leaves a
+  non-positive floor length (`cutout_length_start_mm` or `cutout_length_end_mm`) once converted to
+  millimetres
 - **THEN** the system refuses geometry generation with an actionable validation message
 
 #### Scenario: Skip cutout validation when disabled

@@ -62,7 +62,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--pocket-width-mm", type=float, default=None)
     parser.add_argument("--pocket-corner-radius-mm", type=float, default=None)
     parser.add_argument("--base-corner-radius-mm", type=float, default=None)
-    parser.add_argument("--cutout-offset-mm", type=float, default=None)
+    parser.add_argument(
+        "--cutout-offset-units",
+        type=int,
+        nargs="+",
+        default=None,
+        metavar="UNITS",
+        help=(
+            "Whole Gridfinity units of solid wall reserved at each cutout end. One value applies "
+            "to both ends; two values set the start and end independently (e.g. '1 2')."
+        ),
+    )
     parser.add_argument("--cutout-radius-mm", type=float, default=None)
     parser.add_argument(
         "--no-cutouts",
@@ -121,7 +131,6 @@ def create_parameters(args: argparse.Namespace) -> BinParameters:
         "pocket_width_mm": args.pocket_width_mm,
         "pocket_corner_radius_mm": args.pocket_corner_radius_mm,
         "base_corner_radius_mm": args.base_corner_radius_mm,
-        "cutout_offset_from_edge_mm": args.cutout_offset_mm,
         "cutout_radius_mm": args.cutout_radius_mm,
         "cutouts_enabled": args.cutouts_enabled,
         "divisions": args.divisions,
@@ -137,6 +146,17 @@ def create_parameters(args: argparse.Namespace) -> BinParameters:
     elif args.height_mm is not None:
         overrides["height_mm"] = args.height_mm
         overrides["height_in_units"] = None
+
+    if args.cutout_offset_units is not None:
+        if len(args.cutout_offset_units) == 1:
+            start_units = end_units = args.cutout_offset_units[0]
+        elif len(args.cutout_offset_units) == 2:
+            start_units, end_units = args.cutout_offset_units
+        else:
+            msg = "--cutout-offset-units takes 1 or 2 values"
+            raise ValueError(msg)
+        overrides["cutout_offset_start_units"] = start_units
+        overrides["cutout_offset_end_units"] = end_units
 
     result = replace(params, **overrides)
 

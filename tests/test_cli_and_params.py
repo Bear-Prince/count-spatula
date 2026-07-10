@@ -89,6 +89,41 @@ def test_cli_no_cutouts_flag_disables_cutouts(monkeypatch: pytest.MonkeyPatch, t
     assert result["params"].cutouts_enabled is False
 
 
+@pytest.mark.scenario("gridfinity-utensil-bin", "Cutout floor reaches past the grid line")
+def test_cli_cutout_offset_units_single_value_applies_to_both_ends(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A single --cutout-offset-units value sets both the start and end offsets."""
+    # grid_y=6 leaves a valid 2-unit gap (6 - 2 - 2 = 2); the default grid_y=4 would reject units=2.
+    result = _capture_cli(
+        monkeypatch,
+        ["--grid-y", "6", "--cutout-offset-units", "2", "--output", str(tmp_path / "units.stl")],
+    )
+    assert result["params"].cutout_offset_start_units == 2
+    assert result["params"].cutout_offset_end_units == 2
+
+
+@pytest.mark.scenario("gridfinity-utensil-bin", "Independent per-end cutout offsets")
+def test_cli_cutout_offset_units_two_values_set_start_and_end(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Two --cutout-offset-units values set the start and end offsets independently."""
+    result = _capture_cli(
+        monkeypatch,
+        ["--grid-y", "5", "--cutout-offset-units", "1", "2", "--output", str(tmp_path / "asym.stl")],
+    )
+    assert result["params"].cutout_offset_start_units == 1
+    assert result["params"].cutout_offset_end_units == 2
+
+
+def test_cli_cutout_offset_units_rejects_three_values(capsys: pytest.CaptureFixture[str]) -> None:
+    """Passing more than two --cutout-offset-units values is rejected with an actionable message."""
+    exit_code = main.main(["--cutout-offset-units", "1", "2", "3"])
+    output = capsys.readouterr()
+    assert exit_code == 2
+    assert "takes 1 or 2 values" in output.err
+
+
 def test_cli_wave_profile_flags_set_parameters(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """The wave divider flags populate the corresponding parameters and build a CutleryBin."""
     result = _capture_cli(

@@ -22,7 +22,6 @@ from build123d import (
     BuildLine,
     BuildPart,
     BuildSketch,
-    FilletPolyline,
     Line,
     Locations,
     Mode,
@@ -34,7 +33,6 @@ from build123d import (
     add,
     extrude,
     make_face,
-    mirror,
 )
 from gridfinity_build123d import BaseEqual
 
@@ -45,8 +43,12 @@ GRIDFINITY_CLEARANCE_MM = 0.5 * MM  # Total per-axis footprint clearance (bin = 
 
 # Generic defaults: a 2x4, 8-unit bin with uniform 2 mm walls (a plain kitchen bin, not the chop bin).
 DEFAULT_WALL_THICKNESS = 2 * MM  # mm; uniform wall thickness used to derive the default pocket.
-DEFAULT_CUTOUT_OFFSET = 40 * MM  # mm from the outer Y edge to the edge of the cutout (tunable starting point).
-DEFAULT_CUTOUT_RADIUS = 12.5 * MM  # mm radius of the side cutout arc.
+DEFAULT_CUTOUT_OFFSET_UNITS = 1  # Whole Gridfinity units of solid wall reserved at each end by default.
+DEFAULT_CUTOUT_RADIUS = 10 * MM  # mm radius of the cutout's rim fillet (the floor corner stays sharp).
+# The reserved solid wall at each end is this much shorter than a whole number of grid units, so the
+# cutout's sharp floor edge reaches this far past its target internal grid line -- the line sits just
+# inside the open cutout, and the wall is solid only from this margin further out.
+CUTOUT_GRID_ALLOWANCE_MM = 1 * MM
 
 # Divider profiles. A "straight" divider is a flat slab; a "wave" divider follows a single S-curve
 # (one sine period) along the pocket length so that tapered cutlery can nest in alternating channels.
@@ -63,7 +65,7 @@ CHOP_HEIGHT_UNITS = 8
 CHOP_POCKET_LENGTH = 220 * MM
 CHOP_POCKET_WIDTH = 160 * MM
 CHOP_POCKET_CORNER_RADIUS = 35 * MM
-CHOP_CUTOUT_OFFSET = 75 * MM
+CHOP_CUTOUT_OFFSET_UNITS = 2  # Grid-aligned; splittable on the chop bin's +/-42 mm internal grid lines.
 
 
 @dataclass(slots=True)
@@ -84,7 +86,8 @@ class BinParameters:
     pocket_length_mm: float | None = None
     pocket_width_mm: float | None = None
     pocket_corner_radius_mm: float = 0.0
-    cutout_offset_from_edge_mm: float = DEFAULT_CUTOUT_OFFSET
+    cutout_offset_start_units: int = DEFAULT_CUTOUT_OFFSET_UNITS
+    cutout_offset_end_units: int = DEFAULT_CUTOUT_OFFSET_UNITS
     cutout_radius_mm: float = DEFAULT_CUTOUT_RADIUS
     cutouts_enabled: bool = True
     divisions: int = 1
@@ -119,14 +122,41 @@ class BinParameters:
         return (self.grid_y * GRIDFINITY_PITCH_MM) / 2
 
     @property
-    def cutout_length_mm(self) -> float:
-        """Return the straight length of the cutout, along Y."""
-        return self.side_half_length_mm - self.cutout_offset_from_edge_mm
+    def cutout_offset_start_from_edge_mm(self) -> float:
+        """Return the start-end cutout offset in millimetres, derived from whole grid units.
+
+        The reserved solid wall is ``CUTOUT_GRID_ALLOWANCE_MM`` shorter than a whole number of grid
+        units, so the cutout's sharp floor edge reaches 1 mm past the target internal grid line --
+        i.e. the line itself sits just inside the open cutout, not the solid wall. Unlike the
+        cutout's rim, the floor has a sharp (unfilleted) corner, so its position does not depend on
+        ``cutout_radius_mm``.
+        """
+        return self.cutout_offset_start_units * GRIDFINITY_PITCH_MM - CUTOUT_GRID_ALLOWANCE_MM
 
     @property
-    def cutout_arc_mm(self) -> float:
-        """Return the arc reach of the cutout, along Y."""
-        return self.cutout_length_mm + self.cutout_radius_mm + (0.1 * MM)
+    def cutout_offset_end_from_edge_mm(self) -> float:
+        """Return the end-end cutout offset in millimetres; see ``cutout_offset_start_from_edge_mm``."""
+        return self.cutout_offset_end_units * GRIDFINITY_PITCH_MM - CUTOUT_GRID_ALLOWANCE_MM
+
+    @property
+    def cutout_length_start_mm(self) -> float:
+        """Return the straight floor length of the cutout on the start (-Y) side."""
+        return self.side_half_length_mm - self.cutout_offset_start_from_edge_mm
+
+    @property
+    def cutout_length_end_mm(self) -> float:
+        """Return the straight floor length of the cutout on the end (+Y) side."""
+        return self.side_half_length_mm - self.cutout_offset_end_from_edge_mm
+
+    @property
+    def cutout_arc_start_mm(self) -> float:
+        """Return the rim reach of the cutout on the start (-Y) side."""
+        return self.cutout_length_start_mm + self.cutout_radius_mm + (0.1 * MM)
+
+    @property
+    def cutout_arc_end_mm(self) -> float:
+        """Return the rim reach of the cutout on the end (+Y) side."""
+        return self.cutout_length_end_mm + self.cutout_radius_mm + (0.1 * MM)
 
     def validate(self) -> None:
         """Validate parameter ranges and combinations for printable geometry."""
@@ -210,54 +240,115 @@ class BinParameters:
         # The cutout-fit checks only constrain geometry that is actually built, so they are skipped
         # when cutouts are disabled and the cutout dimensions are inert.
         if self.cutouts_enabled:
-            if self.cutout_offset_from_edge_mm <= 0:
-                errors.append("cutout_offset_from_edge_mm must be greater than 0")
             if self.cutout_radius_mm <= 0:
                 errors.append("cutout_radius_mm must be greater than 0")
-            if self.cutout_length_mm <= 0:
+            if self.cutout_offset_start_units < 1:
+                errors.append("cutout_offset_start_units must be at least 1")
+            if self.cutout_offset_end_units < 1:
+                errors.append("cutout_offset_end_units must be at least 1")
+            # At least one whole grid unit of clean gap between the two reserved margins, so "no
+            # cutouts below 3 units deep" (for a symmetric bin) is an explicit, structural rule.
+            if self.grid_y - self.cutout_offset_start_units - self.cutout_offset_end_units < 1:
                 errors.append(
-                    "cutout_offset_from_edge_mm is too large for grid_y; it must leave room for a cutout"
+                    "cutout_offset_start_units and cutout_offset_end_units leave less than one "
+                    "whole grid unit of gap for grid_y; reduce one of them or increase grid_y"
                 )
-            if self.cutout_arc_mm >= self.side_half_length_mm:
+            elif self.cutout_length_start_mm <= 0 or self.cutout_length_end_mm <= 0:
+                errors.append("cutout_offset_start_units or cutout_offset_end_units is too large for grid_y")
+            elif self.cutout_arc_start_mm + self.cutout_arc_end_mm >= self.grid_y * GRIDFINITY_PITCH_MM:
                 errors.append(
-                    "cutout_offset_from_edge_mm and cutout_radius_mm are incompatible for this grid_y"
+                    "cutout_radius_mm is too large for this grid_y and cutout offset combination"
                 )
+            if self.cutout_radius_mm >= self.effective_height_mm:
+                errors.append("cutout_radius_mm must be less than the effective bin height")
 
         if errors:
             raise ValueError("Invalid bin parameters: " + "; ".join(errors))
 
 
 class SideCutoutProfile(BaseSketchObject):
-    """The side cutout profile (a mirrored fillet polyline), used on both cut walls."""
+    """The side cutout profile: a sharp-cornered floor with an independently filleted rim on each end.
+
+    The two ends need not be symmetric (``cutout_length_start`` / ``cutout_length_end`` may differ),
+    so the shape is built directly rather than by mirroring a single half. The floor corners stay
+    sharp (unfilleted) so a base split at the target grid line always cuts through flat, uninterrupted
+    floor; only the rim -- where the wall flares out to its widest point -- is rounded.
+    """
 
     def __init__(
         self,
         *,
-        cutout_length: float,
+        cutout_length_start: float,
+        cutout_length_end: float,
         cutout_height: float,
-        cutout_arc: float,
+        cutout_arc_start: float,
+        cutout_arc_end: float,
         cutout_radius: float,
         rotation: RotationLike = (0, 0, 0),
         align: Align | tuple[Align, Align] | None = None,
         mode: Mode = Mode.ADD,
     ) -> None:
         """Build the side cutout profile."""
+        # The fillet trims into the patch horizontally (by `radius`, into the arc_start/arc_end
+        # margin below) and vertically (by `radius`, down into the wall) from the corner at the
+        # patch's own bottom -- neither trim depends on the patch's height, so it only needs to be
+        # a small, non-degenerate sliver. Keeping it independent of `radius` (rather than sized to
+        # it) means the fillet's arc reaches almost all the way to the flat top, leaving only this
+        # negligible straight remnant above it, instead of a full extra `radius` of straight wall.
+        patch_height = 0.1 * MM
+
         with BuildSketch() as profile:
+            # The sharp-cornered core: flat floor, both walls square. Building the two rim flares as
+            # separate patches (rather than one continuous polyline reaching to each rim) avoids the
+            # two ends' straight top edges retracing each other, which otherwise collapses the flare.
             with BuildLine():
-                FilletPolyline(
-                    (0, 0),
-                    (cutout_length, 0),
-                    (cutout_length, cutout_height),
-                    (cutout_arc, cutout_height),
-                    radius=cutout_radius,
+                Line((-cutout_length_start, 0), (cutout_length_end, 0))
+                Line((cutout_length_end, 0), (cutout_length_end, cutout_height))
+                Line((cutout_length_end, cutout_height), (-cutout_length_start, cutout_height))
+                Line((-cutout_length_start, cutout_height), (-cutout_length_start, 0))
+            make_face()
+
+            with BuildLine():
+                Line(
+                    (cutout_length_end, cutout_height - patch_height),
+                    (cutout_arc_end, cutout_height - patch_height),
+                )
+                Line((cutout_arc_end, cutout_height - patch_height), (cutout_arc_end, cutout_height))
+                Line((cutout_arc_end, cutout_height), (cutout_length_end, cutout_height))
+                Line(
+                    (cutout_length_end, cutout_height),
+                    (cutout_length_end, cutout_height - patch_height),
+                )
+            make_face()
+
+            with BuildLine():
+                Line(
+                    (-cutout_arc_start, cutout_height - patch_height),
+                    (-cutout_length_start, cutout_height - patch_height),
                 )
                 Line(
-                    (0, cutout_height),
-                    (cutout_arc, cutout_height),
+                    (-cutout_length_start, cutout_height - patch_height),
+                    (-cutout_length_start, cutout_height),
                 )
-                mirror(about=Plane.YZ)
+                Line((-cutout_length_start, cutout_height), (-cutout_arc_start, cutout_height))
+                Line(
+                    (-cutout_arc_start, cutout_height),
+                    (-cutout_arc_start, cutout_height - patch_height),
+                )
             make_face()
-        super().__init__(profile.face(), rotation, align, mode)
+
+            # Fillet only the two corners where each wall meets its rim flare (at the step height),
+            # leaving the floor corners (at height 0) and the outer rim corners untouched.
+            step_y = cutout_height - patch_height
+            combined_face = profile.sketch.faces()[0]
+            rim_corners = [
+                v
+                for v in combined_face.vertices()
+                if abs(v.Y - step_y) < 1e-6
+                and (abs(v.X - cutout_length_end) < 1e-6 or abs(v.X - (-cutout_length_start)) < 1e-6)
+            ]
+            filleted_face = combined_face.fillet_2d(cutout_radius, rim_corners)
+        super().__init__(filleted_face, rotation, align, mode)
 
 
 def _rounded_panel(
@@ -326,12 +417,16 @@ class KitchenBin(BasePartObject):
                 half_width = params.grid_x * GRIDFINITY_PITCH_MM / 2
                 cut_plane = Plane(origin=(0, 0, floor_z), x_dir=(0, 1, 0), z_dir=(1, 0, 0))
                 with BuildSketch(cut_plane) as side_sketch:
+                    # No align: the profile is built with its own origin at the wall's centre (local
+                    # X=0) and floor (local Y=0), matching this plane's origin exactly. The two ends
+                    # may differ, so re-centering the bounding box (Align.CENTER) would misplace it.
                     SideCutoutProfile(
-                        cutout_length=params.cutout_length_mm,
+                        cutout_length_start=params.cutout_length_start_mm,
+                        cutout_length_end=params.cutout_length_end_mm,
                         cutout_height=top_z - floor_z,
-                        cutout_arc=params.cutout_arc_mm,
+                        cutout_arc_start=params.cutout_arc_start_mm,
+                        cutout_arc_end=params.cutout_arc_end_mm,
                         cutout_radius=params.cutout_radius_mm,
-                        align=(Align.CENTER, Align.MIN),
                     )
                 extrude(
                     to_extrude=side_sketch.sketch.faces(),
@@ -463,7 +558,8 @@ def _chop_board_preset() -> BinParameters:
         pocket_length_mm=CHOP_POCKET_LENGTH,
         pocket_width_mm=CHOP_POCKET_WIDTH,
         pocket_corner_radius_mm=CHOP_POCKET_CORNER_RADIUS,
-        cutout_offset_from_edge_mm=CHOP_CUTOUT_OFFSET,
+        cutout_offset_start_units=CHOP_CUTOUT_OFFSET_UNITS,
+        cutout_offset_end_units=CHOP_CUTOUT_OFFSET_UNITS,
     )
 
 

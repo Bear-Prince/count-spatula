@@ -93,6 +93,27 @@ dividers) solid:
 uv run python main.py --no-cutouts
 ```
 
+### Cutout geometry
+
+![Cutout profile: sharp floor corner, side wall, filleted rim](docs/images/cutout-profile.svg)
+
+Each side cutout is a scoop with a sharp floor corner and one filleted corner
+(`--cutout-radius-mm`, default 10 mm):
+
+- **floor** — the flat base of the slot.
+- **sharp corner** — where the floor meets the side wall; unfilleted, so its position does not
+  depend on the radius.
+- **side wall** — the straight vertical section.
+- **rim fillet** — rounds the side wall out to the wider top opening.
+- **rim** — the widest point, where the slot meets the top of the wall.
+
+`--cutout-offset-units` sets how many whole Gridfinity grid units of solid wall are reserved at each
+end, as one value (applies to both ends, default 1) or two (`start end`, set independently — handy
+for aligning bins of different lengths at a shared end, e.g. `--cutout-offset-units 1 2`). The
+reserved solid wall is a fixed 1 mm shorter than that whole number of units, so the sharp floor
+corner reaches 1 mm past the corresponding internal grid line — the line itself sits just inside the
+open cutout, not the solid wall — regardless of the chosen radius.
+
 ### Other options
 
 Export as 3MF using the default filename:

@@ -5,6 +5,7 @@ from build123d import Box, BuildPart, Location, Mode, add
 from gridfinity_build123d import BaseEqual
 
 from cutlery_bin import (
+    CUTOUT_GRID_ALLOWANCE_MM,
     GRIDFINITY_CLEARANCE_MM,
     GRIDFINITY_PITCH_MM,
     BinParameters,
@@ -15,6 +16,23 @@ from cutlery_bin import (
     preset_names,
     resolve_preset,
 )
+
+
+def _start_grid_line_overshoot(params: BinParameters) -> float:
+    """Return how far past its target grid line the cutout's sharp floor edge reaches (start side).
+
+    The reserved solid wall is ``CUTOUT_GRID_ALLOWANCE_MM`` shorter than a whole number of grid
+    units, so the floor edge lands this far past the line -- the line itself sits just inside the
+    open cutout, not the solid wall.
+    """
+    gridline = params.side_half_length_mm - params.cutout_offset_start_units * GRIDFINITY_PITCH_MM
+    return params.cutout_length_start_mm - gridline
+
+
+def _end_grid_line_overshoot(params: BinParameters) -> float:
+    """Return how far past its target grid line the cutout's sharp floor edge reaches (end side)."""
+    gridline = params.side_half_length_mm - params.cutout_offset_end_units * GRIDFINITY_PITCH_MM
+    return params.cutout_length_end_mm - gridline
 
 
 def _base_footprint(grid_x: int, grid_y: int) -> tuple:
@@ -59,6 +77,13 @@ _W_CUT_MID_BOX = ((-13.25, 0.0, 40.0), (6.0, 30.0, 30.0))
 # inside the base where the Gridfinity grooves live. A correctly-placed divider adds nothing here.
 _W_SUBFLOOR_BOX = ((-13.25, 0.0, 0.0), (4.0, 40.0, 7.0))
 
+# Razor-thin probes right at true floor level (floor_z ~ 3.902) for the chop bin's +/-42 mm internal
+# grid line: the reserved solid wall is 1 mm shorter than a whole number of grid units, so the
+# cutout's sharp floor edge reaches 1 mm past the line (transition at Y=43, not Y=42) -- the line
+# itself sits just inside the open cutout, and the wall is only solid from Y=43 onward.
+_GRID_LINE_FLOOR_BOX = ((81.0, 42.0, 3.927), (4.0, 0.6, 0.05))
+_PAST_GRID_LINE_FLOOR_BOX = ((81.0, 44.0, 3.927), (4.0, 0.6, 0.05))
+
 
 @pytest.fixture(scope="module")
 def bins() -> dict:
@@ -80,6 +105,9 @@ def bins() -> dict:
         "chop_solid": create_kitchen_bin(replace(chop, cutouts_enabled=False)),
         "cutlery_chop2": create_cutlery_bin(replace(chop, divisions=2)),
         "cutlery_chop2_solid": create_cutlery_bin(replace(chop, divisions=2, cutouts_enabled=False)),
+        "asymmetric": create_kitchen_bin(
+            BinParameters(grid_y=5, cutout_offset_start_units=1, cutout_offset_end_units=2)
+        ),
     }
 
 
@@ -178,6 +206,28 @@ def test_side_cutout_removes_material_from_walls(bins: dict) -> None:
     cut, solid = bins["chop"], bins["chop_solid"]
     removed = _region_volume(solid, *_LEFT_WALL_BOX) - _region_volume(cut, *_LEFT_WALL_BOX)
     assert removed > 1000.0, f"Expected the side wall to be slotted, only {removed:.1f} mm^3 removed"
+
+
+@pytest.mark.scenario("gridfinity-utensil-bin", "Cutout floor reaches past the grid line")
+def test_grid_line_sits_inside_the_open_cutout(bins: dict) -> None:
+    """A razor-thin probe at true floor level: the grid line itself is open, 1 mm inside the cutout.
+
+    Confirms the sign of the grid-clearance offset: the reserved solid wall is 1 mm shorter than a
+    whole number of grid units, so the cutout's sharp floor edge reaches 1 mm past the target grid
+    line -- the line sits just inside the open cutout, and the wall is solid from 1 mm further out.
+    """
+    at_line = _region_volume(bins["chop"], *_GRID_LINE_FLOOR_BOX)
+    past_line = _region_volume(bins["chop"], *_PAST_GRID_LINE_FLOOR_BOX)
+    assert at_line < 0.005, f"Expected the grid line itself to be open, found {at_line:.4f} mm^3"
+    assert past_line > 0.01, f"Expected solid material just past the grid line, found {past_line:.4f} mm^3"
+
+
+@pytest.mark.scenario("gridfinity-utensil-bin", "Independent per-end cutout offsets")
+def test_asymmetric_bin_builds_valid_geometry(bins: dict) -> None:
+    """A bin with different start/end cutout offsets builds a valid part with the expected footprint."""
+    bbox = bins["asymmetric"].bounding_box()
+    assert abs(bbox.size.Y - (5 * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM)) < 0.1
+    assert bins["asymmetric"].volume > 0
 
 
 @pytest.mark.scenario("gridfinity-utensil-bin", "Cutouts are symmetric and leave the base intact")
@@ -316,14 +366,83 @@ def test_validation_rejects_oversized_wave_amplitude() -> None:
 @pytest.mark.scenario("gridfinity-utensil-bin", "Skip cutout validation when disabled")
 def test_validation_skips_cutout_checks_when_disabled() -> None:
     """Cutout-fit checks are skipped when cutouts are disabled."""
-    BinParameters(cutout_offset_from_edge_mm=1, cutout_radius_mm=600, cutouts_enabled=False).validate()
+    BinParameters(cutout_radius_mm=600, cutouts_enabled=False).validate()
 
 
 @pytest.mark.scenario("gridfinity-utensil-bin", "Reject cutouts too large for the side")
 def test_validation_rejects_oversized_cutout() -> None:
-    """A cutout offset and radius that cannot fit the side's length is rejected."""
-    with pytest.raises(ValueError, match="cutout"):
-        BinParameters(cutout_offset_from_edge_mm=1, cutout_radius_mm=600).validate()
+    """A radius large enough that the two rims would meet in the middle is rejected."""
+    with pytest.raises(ValueError, match="too large for this grid_y"):
+        BinParameters(cutout_radius_mm=45.0).validate()
+
+
+@pytest.mark.scenario("gridfinity-utensil-bin", "Reject a radius too large for the wall height")
+def test_validation_rejects_radius_larger_than_wall_height() -> None:
+    """A radius at or beyond the effective bin height is rejected (the rim fillet would not fit)."""
+    with pytest.raises(ValueError, match="less than the effective bin height"):
+        BinParameters(cutout_radius_mm=200.0, height_mm=50.0, height_in_units=None).validate()
+
+
+@pytest.mark.scenario("gridfinity-utensil-bin", "Reject cutouts on a bin shallower than three units")
+def test_validation_rejects_cutouts_on_shallow_bin() -> None:
+    """A grid_y=2 bin with the default offsets leaves less than one whole unit of gap."""
+    with pytest.raises(ValueError, match="less than one whole grid unit"):
+        BinParameters(grid_y=2).validate()
+
+
+@pytest.mark.scenario("gridfinity-utensil-bin", "Reject an offset unit below one")
+def test_validation_rejects_offset_unit_below_one() -> None:
+    """Each end's offset must reserve at least one whole grid unit."""
+    with pytest.raises(ValueError, match="cutout_offset_start_units must be at least 1"):
+        BinParameters(cutout_offset_start_units=0).validate()
+    with pytest.raises(ValueError, match="cutout_offset_end_units must be at least 1"):
+        BinParameters(cutout_offset_end_units=0).validate()
+
+
+@pytest.mark.scenario("gridfinity-utensil-bin", "Reject an offset combination with a non-positive cutout length")
+def test_validation_rejects_offset_with_non_positive_cutout_length() -> None:
+    """A whole-unit gap of exactly 1 can still leave a non-positive floor length once converted to mm."""
+    params = BinParameters(grid_y=6, cutout_offset_start_units=4, cutout_offset_end_units=1)
+    assert params.cutout_length_start_mm <= 0
+    with pytest.raises(ValueError, match="is too large for grid_y"):
+        params.validate()
+
+
+@pytest.mark.scenario("gridfinity-utensil-bin", "Cutout floor reaches past the grid line")
+def test_default_cutout_floor_reaches_past_grid_line() -> None:
+    """The default bin's sharp cutout floor edge reaches exactly the grid allowance past the line."""
+    params = BinParameters()
+    params.validate()
+    assert _start_grid_line_overshoot(params) == pytest.approx(CUTOUT_GRID_ALLOWANCE_MM)
+    assert _end_grid_line_overshoot(params) == pytest.approx(CUTOUT_GRID_ALLOWANCE_MM)
+
+
+@pytest.mark.scenario("gridfinity-utensil-bin", "Grid-line overshoot holds regardless of radius")
+def test_cutout_floor_overshoot_holds_for_custom_radius() -> None:
+    """The 1 mm grid overshoot holds even with a non-default cutout radius (the floor is sharp)."""
+    params = BinParameters(cutout_radius_mm=8.0)
+    params.validate()
+    assert _start_grid_line_overshoot(params) == pytest.approx(CUTOUT_GRID_ALLOWANCE_MM)
+
+
+@pytest.mark.scenario("gridfinity-utensil-bin", "Independent per-end cutout offsets")
+def test_asymmetric_offsets_give_different_cutout_lengths() -> None:
+    """Setting different start/end units produces a cutout with different lengths on each side."""
+    params = BinParameters(grid_y=5, cutout_offset_start_units=1, cutout_offset_end_units=2)
+    params.validate()
+    assert params.cutout_length_start_mm != pytest.approx(params.cutout_length_end_mm)
+    assert _start_grid_line_overshoot(params) == pytest.approx(CUTOUT_GRID_ALLOWANCE_MM)
+    assert _end_grid_line_overshoot(params) == pytest.approx(CUTOUT_GRID_ALLOWANCE_MM)
+
+
+@pytest.mark.scenario("bin-presets", "Generate a bin from a preset")
+def test_chop_preset_cutout_floor_past_grid_line() -> None:
+    """The chop-board preset's cutout floor reaches past its +/-42 mm internal grid lines."""
+    chop = resolve_preset("chop-board")
+    chop.validate()
+    assert chop.cutout_offset_start_units == 2
+    assert chop.cutout_offset_end_units == 2
+    assert _start_grid_line_overshoot(chop) == pytest.approx(CUTOUT_GRID_ALLOWANCE_MM)
 
 
 @pytest.mark.scenario("gridfinity-utensil-bin", "Generate bin with Gridfinity height units")
