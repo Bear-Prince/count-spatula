@@ -63,7 +63,7 @@ Pre-commit hooks run `ruff check`, `markdownlint`, and `yamllint` on commit; `py
 
 **`main.py`** is the CLI layer. It parses args into a `BinParameters` (optionally seeded from `--preset`), calls `export_bin()` to write STL or 3MF (selected by `--format` or the output extension), and returns process exit codes. `--divisions >= 2` builds a `CutleryBin`; otherwise a `KitchenBin`. Tests mock the bin factories and export to avoid real geometry builds.
 
-**`gridfinity_build123d`** is pulled from a public GitHub repo over HTTPS (`https://github.com/Ruudjhuu/gridfinity_build123d`), pinned to a specific commit in `pyproject.toml`. Requires Linux x86_64.
+**`gridfinity_build123d`** is pulled over HTTPS from our mirror fork (`https://github.com/Bear-Prince/gridfinity_build123d`, upstream `Ruudjhuu/gridfinity_build123d`), pinned to a specific commit in `pyproject.toml`. The fork exists only so builds survive upstream disappearing — never diverge it; to pick up upstream changes, sync the fork and bump the pin deliberately (geometry can change, so UAT applies). Requires Linux x86_64.
 
 ## OpenSpec change workflow
 
