@@ -79,6 +79,51 @@ With thanks to the Gridfinity lineage this builds on:
 
 ---
 
+## Instructions (steps)
+
+Paste-ready copy for Thingiverse's step-by-step "Instructions" section.
+
+---
+
+### Step 1 — Print the original Gridfinity bins
+
+Started by printing Jonathan Levi's (The Next Layer)
+["Gridfinity Complete Kitchen Collection"](https://www.printables.com/model/719729-gridfinity-complete-kitchen-collection-w-modular-e)
+to get a feel for handle-cutout kitchen bins and confirm the idea actually fit my drawers before
+building anything of my own.
+
+### Step 2 — Recreate them in Jupyter and Python
+
+Wrote Jupyter notebooks in Python (using build123d) to reproduce similar bins programmatically, so
+I could tweak dimensions in code instead of a GUI. That prototyping became the seed of what's now
+[count-spatula](https://github.com/Bear-Prince/count-spatula).
+
+### Step 3 — Build a custom bin for my IKEA chopping board
+
+Extended the notebooks into a custom bin sized for my IKEA chopping board — measured directly from
+the board itself, not copied from anyone else's design. This was the first bin with an explicit,
+non-uniform-wall pocket, and it's what's now the `chop-board` preset.
+
+### Step 4 — Turn it into a proper generator
+
+From there the notebooks grew into count-spatula, a proper parametric generator, with a few rounds
+of "print it, use it, notice what's wrong, fix the geometry":
+
+- Cutout profiles went from a filleted floor to a **sharp floor corner with only the rim rounded**,
+  so a slicer can cut clean through the open notch without catching a wall.
+- That made it possible to **align the cutout to the Gridfinity 42 mm grid**, so a bin longer than
+  your print bed (like the chopping-board bin here) can be split on a grid line and printed in
+  sections that still fit together properly.
+
+The whole thing is parametric and open source under Apache 2.0 (the generator) / CC BY-SA 4.0 (the
+models) — if none of these exact sizes fit your drawer, you can generate your own. I built it
+working alongside Claude Code as a coding assistant, and used a spec-driven process (writing down
+what a feature should do before building it) to keep the geometry honest as it grew more complex.
+
+This is a **v0.1.0 beta** — first real-world feedback welcome.
+
+---
+
 ## Files to upload
 
 From the GitHub Release (or `build/release/` locally):
