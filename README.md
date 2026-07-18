@@ -3,6 +3,14 @@
 [![Tests](https://github.com/Bear-Prince/count-spatula/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/Bear-Prince/count-spatula/actions/workflows/tests.yml?query=branch%3Amain)
 [![codecov](https://codecov.io/gh/Bear-Prince/count-spatula/branch/main/graph/badge.svg)](https://codecov.io/gh/Bear-Prince/count-spatula)
 
+## Example models
+
+![Cycling renders of the example bin set](docs/assets/models.gif)
+
+Renders of the models above are CC BY-SA 4.0 (see [Licensing](#licensing)); the generator code itself is
+Apache 2.0. Regenerate them with `uv run python render_models.py` (requires `openscad` and `imagemagick`
+on `PATH`).
+
 ## OpenSpec (local to this repo)
 
 This repository uses the OpenSpec CLI as a local dev dependency.
