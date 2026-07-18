@@ -12,8 +12,12 @@
 		"ghcr.io/devcontainers-extra/features/pnpm:2": {},
 		"ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
 	},
-	// Install the Python environment, Node tooling (openspec, markdownlint), and git hooks.
-	"postCreateCommand": "uv sync && pnpm install && uv run pre-commit install",
+	// libgl1 (Mesa) is required by OCP/build123d's OpenCASCADE bindings even for headless
+	// geometry builds; the base Python image doesn't include it. `apt-get update` is allowed
+	// to fail here (an unrelated third-party repo added by the node feature can be unsigned)
+	// as long as the Debian package lists it needs land.
+	// Then install the Python environment, Node tooling (openspec, markdownlint), and git hooks.
+	"postCreateCommand": "sudo apt-get update || true && sudo apt-get install -y libgl1 && uv sync && pnpm install && uv run pre-commit install",
 	"customizations": {
 		"vscode": {
 			"extensions": [
