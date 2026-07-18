@@ -33,8 +33,10 @@ dev = [
 
 [tool.uv.sources]
 # Pin to a specific commit so the geometry dependency cannot drift unnoticed. The repo is public,
-# so HTTPS lets local checkouts and CI clone it anonymously with no SSH key.
-gridfinity-build123d = { git = "https://github.com/Ruudjhuu/gridfinity_build123d", rev = "261f4550ba26c3be58eca4f8abdc9e112a30d396" }
+# so HTTPS lets local checkouts and CI clone it anonymously with no SSH key. We install from our
+# fork of Ruudjhuu/gridfinity_build123d (same commit hashes) so builds do not depend on the
+# upstream repo staying available; the fork is a plain mirror and must not diverge from upstream.
+gridfinity-build123d = { git = "https://github.com/Bear-Prince/gridfinity_build123d", rev = "261f4550ba26c3be58eca4f8abdc9e112a30d396" }
 
 [tool.uv]
 required-environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
