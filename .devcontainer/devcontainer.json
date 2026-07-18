@@ -10,14 +10,16 @@
 		"ghcr.io/devcontainers-extra/features/uv:1": {},
 		"ghcr.io/devcontainers/features/node:1": {},
 		"ghcr.io/devcontainers-extra/features/pnpm:2": {},
-		"ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
+		"ghcr.io/anthropics/devcontainer-features/claude-code:1": {},
+		"ghcr.io/devcontainers/features/github-cli:1": {}
 	},
-	// Install openscad/imagemagick/xvfb (README render tooling — Codespaces has no X server, so
-	// OpenSCAD's OpenGL context needs xvfb-run), the Python environment, Node tooling (openspec,
-	// markdownlint), and git hooks. `apt-get update` is allowed to fail here (an unrelated
-	// third-party repo added by the node feature can be unsigned) as long as the Debian package
-	// lists it needs land.
-	"postCreateCommand": "sudo apt-get update || true && sudo apt-get install -y openscad imagemagick xvfb && uv sync && pnpm install && uv run pre-commit install",
+	// libgl1 (Mesa) is required by OCP/build123d's OpenCASCADE bindings even for headless
+	// geometry builds. openscad/imagemagick/xvfb are README render tooling — Codespaces has no
+	// X server, so OpenSCAD's OpenGL context needs xvfb-run. `apt-get update` is allowed to fail
+	// here (an unrelated third-party repo added by the node feature can be unsigned) as long as
+	// the Debian package lists it needs land. Then install the Python environment, Node tooling
+	// (openspec, markdownlint), and git hooks.
+	"postCreateCommand": "sudo apt-get update || true && sudo apt-get install -y libgl1 openscad imagemagick xvfb && uv sync && pnpm install && uv run pre-commit install",
 	"customizations": {
 		"vscode": {
 			"extensions": [
