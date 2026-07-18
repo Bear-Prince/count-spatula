@@ -38,3 +38,7 @@ jobs:
           plugin_marketplaces: "https://github.com/anthropics/claude-code.git"
           plugins: "code-review@claude-code-plugins"
           prompt: "/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
+          # Dependabot PRs only ever touch dependency-pin lines (pyproject.toml, devcontainer
+          # feature versions), so they carry no attacker-controlled content; allow the action to
+          # run for them rather than failing every dependency-bump PR's review check.
+          allowed_bots: "dependabot"
