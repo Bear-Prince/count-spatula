@@ -33,12 +33,14 @@
 ## 4. Verification and UAT
 
 - [x] 4.1 Run `uv run ruff check .` and fix findings.
-- [ ] 4.2 Run `uv run pytest` and confirm the full suite passes (blocked on 4.3 — the README-embedding test is
-  red until real images exist).
-- [ ] 4.3 **Blocked on the user**: install `openscad`/`imagemagick` (`sudo apt-get install -y openscad
-  imagemagick`), then run `uv run python render_models.py` and commit `docs/assets/`.
-- [ ] 4.4 UAT: eyeball every PNG and the GIF (camera angle, framing, frame timing, licence caption in README);
-  also regenerate the `UAT.md` bin models to `build/` and confirm they are unchanged by this tooling-only change.
+- [x] 4.2 Run `uv run pytest` and confirm the full suite passes: 95 passed.
+- [x] 4.3 Installed `openscad`/`imagemagick` (+ `xvfb`, needed for OpenSCAD's OpenGL context in this headless
+  environment — `xvfb-run -a uv run python render_models.py`); real render produced all 6 PNGs + `models.gif`
+  in `docs/assets/`.
+- [x] 4.4 UAT: eyeballed all 6 PNGs and the GIF — camera angle/framing consistent, wave vs straight dividers
+  visibly distinct (confirmed via a side-by-side composite), GIF has 6 frames/infinite loop/0.75s delay via
+  `identify -verbose`, licence caption present in README. Regenerated the default UAT bin to `build/` — exports
+  cleanly with no warnings, confirming geometry is unchanged by this tooling-only change.
 - [ ] 4.5 Archive the change so the spec delta folds into `openspec/specs/`.
 - [ ] 4.6 After archiving, add `@pytest.mark.scenario("model-rendering", ...)` markers to the four tests in
   `tests/test_render_models.py` claiming: "Render the set to PNGs", "GIF cycles the example models", "Missing
