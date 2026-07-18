@@ -1,0 +1,26 @@
+// Dev container for count-spatula. Works locally in VS Code or in GitHub Codespaces, so the
+// project (and Claude Code) can be picked up from any device. The gridfinity_build123d
+// dependency requires Linux x86_64, which this image provides on both hosts.
+// Format: https://aka.ms/devcontainer.json
+{
+	"name": "count-spatula",
+	"image": "mcr.microsoft.com/devcontainers/python:2-3.13-trixie",
+	"features": {
+		"ghcr.io/devcontainers-extra/features/starship:1": {},
+		"ghcr.io/devcontainers-extra/features/uv:1": {},
+		"ghcr.io/devcontainers/features/node:1": {},
+		"ghcr.io/devcontainers-extra/features/pnpm:2": {},
+		"ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
+	},
+	// Install the Python environment, Node tooling (openspec, markdownlint), and git hooks.
+	"postCreateCommand": "uv sync && pnpm install && uv run pre-commit install",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"charliermarsh.ruff",
+				"mtsmfm.vscode-stl-viewer"
+			]
+		}
+	}
+}
