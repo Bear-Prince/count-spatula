@@ -101,7 +101,9 @@ to see real progress (for example, `1/4 artifacts`); `validate` measures complet
 - **Generate the UAT models before archiving.** Geometry output can't be fully judged by the test suite, so each
   change's verification/UAT task group must regenerate the affected bins (the `UAT.md` cases) to `build/` for
   slicer review. Order this step *before* the archive step (and before any push/PR), so the bins are eyeballed
-  while the change is still active.
+  while the change is still active. If the change affects geometry or the example model set, also regenerate the
+  README renders (`uv run python render_models.py`) and eyeball them in the same UAT step, since committed images
+  go stale silently otherwise.
 - **Renaming a change is manual.** The change name, its directory, and the branch are coupled only by convention.
   To rename: `git mv openspec/changes/<old> openspec/changes/<new>`, update any cross-references inside the
   artifacts, and rename the branch to match. There is no CLI command for this.
