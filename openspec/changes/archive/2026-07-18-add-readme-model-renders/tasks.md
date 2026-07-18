@@ -41,8 +41,9 @@
   visibly distinct (confirmed via a side-by-side composite), GIF has 6 frames/infinite loop/0.75s delay via
   `identify -verbose`, licence caption present in README. Regenerated the default UAT bin to `build/` — exports
   cleanly with no warnings, confirming geometry is unchanged by this tooling-only change.
-- [ ] 4.5 Archive the change so the spec delta folds into `openspec/specs/`.
-- [ ] 4.6 After archiving, add `@pytest.mark.scenario("model-rendering", ...)` markers to the four tests in
+- [x] 4.5 Archive the change so the spec delta folds into `openspec/specs/`: archived as
+  `2026-07-18-add-readme-model-renders`, `model-rendering` spec created (3 requirements).
+- [x] 4.6 After archiving, add `@pytest.mark.scenario("model-rendering", ...)` markers to the four tests in
   `tests/test_render_models.py` claiming: "Render the set to PNGs", "GIF cycles the example models", "Missing
-  render tool fails with an actionable error", "README references existing committed images". Re-run
-  `uv run pytest` to confirm the traceability guard passes with the new capability fully claimed.
+  render tool fails with an actionable error", "README references existing committed images". Traceability guard
+  + render tests: 14 passed.

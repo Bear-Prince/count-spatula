@@ -74,6 +74,7 @@ class _FakeMesher:
         Path(path).write_text("stub stl")
 
 
+@pytest.mark.scenario("model-rendering", "Render the set to PNGs")
 def test_render_png_invokes_openscad_with_fixed_camera_and_size(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -116,6 +117,7 @@ def test_render_png_command_shape(monkeypatch: pytest.MonkeyPatch, tmp_path: Pat
     assert f"--imgsize={render_models.IMAGE_SIZE},{render_models.IMAGE_SIZE}" in captured_cmd
 
 
+@pytest.mark.scenario("model-rendering", "GIF cycles the example models")
 def test_build_gif_stitches_frames_in_order(monkeypatch: pytest.MonkeyPatch) -> None:
     """build_gif calls ImageMagick with the frames in order, a loop flag, and the output path last."""
     captured_cmd: list[str] = []
@@ -142,6 +144,7 @@ def test_build_gif_works_identically_with_im6_convert(monkeypatch: pytest.Monkey
     assert captured_cmd[-2:] == ["a.png", "out.gif"]
 
 
+@pytest.mark.scenario("model-rendering", "Missing render tool fails with an actionable error")
 def test_main_fails_fast_when_openscad_is_missing(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -214,6 +217,7 @@ def test_main_renders_every_manifest_entry_and_builds_one_gif(
     assert magick_bin == "/usr/bin/magick"
 
 
+@pytest.mark.scenario("model-rendering", "README references existing committed images")
 def test_readme_image_references_exist_with_licence_caption() -> None:
     """Every docs/assets image the README links to exists, and the CC BY-SA caption follows it."""
     repo_root = Path(__file__).resolve().parent.parent
