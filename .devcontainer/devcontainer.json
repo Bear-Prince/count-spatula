@@ -10,7 +10,8 @@
 		"ghcr.io/devcontainers-extra/features/uv:1": {},
 		"ghcr.io/devcontainers/features/node:1": {},
 		"ghcr.io/devcontainers-extra/features/pnpm:2": {},
-		"ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
+		"ghcr.io/anthropics/devcontainer-features/claude-code:1": {},
+		"ghcr.io/devcontainers/features/github-cli:1": {}
 	},
 	// libgl1 (Mesa) is required by OCP/build123d's OpenCASCADE bindings even for headless
 	// geometry builds; the base Python image doesn't include it. `apt-get update` is allowed
