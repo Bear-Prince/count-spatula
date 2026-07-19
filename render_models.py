@@ -4,6 +4,10 @@ Uses headless OpenSCAD to render each model (via a one-line .scad file that impo
 STL) and ImageMagick to stitch the renders into a looping GIF. Neither tool is a Python dependency;
 both are looked up on PATH so a missing tool fails fast with an actionable message instead of a
 partial set of images.
+
+OpenSCAD's image export still opens an OpenGL context even though nothing is shown on screen, so it
+needs a display. Without one (headless CI, most containers, Codespaces) it dies with a bare SIGSEGV
+instead of a readable error -- run this script under ``xvfb-run -a`` in that case (install ``xvfb``).
 """
 
 import shutil

@@ -9,7 +9,10 @@
 
 Renders of the models above are CC BY-SA 4.0 (see [Licensing](#licensing)); the generator code itself is
 Apache 2.0. Regenerate them with `uv run python render_models.py` (requires `openscad` and `imagemagick`
-on `PATH`).
+on `PATH`). Without a display (headless CI, most containers, Codespaces) OpenSCAD's offscreen renderer
+still needs a virtual one: install `xvfb` and prefix the command with `xvfb-run -a`, e.g.
+`xvfb-run -a uv run python render_models.py` — without it, OpenSCAD dies with a `SIGSEGV` rather than a
+readable error, so this is easy to lose time to.
 
 ## OpenSpec (local to this repo)
 
@@ -150,6 +153,21 @@ edge floating clear of the printed material.
 ```bash
 uv run python main.py --knife-block
 ```
+
+![The default 7-lane knife blade block](docs/assets/knife_block.png)
+
+This render (like the example models above) is CC BY-SA 4.0 (see [Licensing](#licensing)). Regenerate
+it by reusing `render_models.py`'s render helper:
+
+```python
+from render_models import find_openscad, render_png
+from knife_block import KnifeBlockParameters, create_knife_blade_block
+
+render_png(create_knife_blade_block(KnifeBlockParameters()), "docs/assets/knife_block.png", find_openscad())
+```
+
+Requires `openscad` on `PATH` (and, without a display — e.g. in a container — `xvfb-run` wrapping the
+command).
 
 ### Lane geometry
 
