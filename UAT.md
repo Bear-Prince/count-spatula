@@ -64,3 +64,15 @@ re-verified.
   (251.5 mm) exceeds the print volume depth (220 mm) — because the chop bin is 6 units long. Overriding with a
   larger `--bed-y` (≥ 252) clears the warning; a tight `--bed-y 100` warns on any bin.
 - Last passed: 2026-06-22 (also covered by tests)
+
+### UAT-9: CutleryBin with wave dividers (2×4, 3 columns)
+
+- Command: `uv run python main.py --divisions 3 --divider-profile wave --divider-amplitude-mm 4 --output build/wave.stl`
+- Expect: 2×4 footprint (83.5×167.5 mm) split into 3 equal columns by two dividers, each bending along a
+  single S-curve (one sine period) over the pocket length with a 4 mm sideways swing; the two dividers are
+  phase-mirrored, so the channel between them narrows where the outer channels widen (and vice versa),
+  letting tapered cutlery nest head-to-tail. Each divider's centreline still meets both un-cut end walls at
+  the nominal (straight-divider) spacing, and leaves a printable gap to its neighbour and the pocket walls
+  at the widest point of its swing. The full-height handle slot still runs through the dividers' central
+  band, and the wave shape adds no material below the inner floor (the Gridfinity base is unaffected).
+- Last passed: not yet verified
