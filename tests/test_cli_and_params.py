@@ -5,6 +5,7 @@ import pytest
 
 import main
 from cutlery_bin import BinParameters
+from knife_block import KnifeBlockParameters
 
 
 def _stub_part(x: float = 84.0, y: float = 168.0, z: float = 60.0) -> object:
@@ -39,6 +40,13 @@ def test_default_output_path_names_cutlery_bin_for_divisions() -> None:
     params = BinParameters(grid_x=4, grid_y=6, height_mm=56, divisions=3)
     output = main.default_output_path(params)
     assert output.name == "cutlery_bin_4x6_h56.stl"
+
+
+def test_default_output_path_for_knife_block() -> None:
+    """A KnifeBlockParameters set should produce a knife_block filename, not a bin filename."""
+    params = KnifeBlockParameters(knife_count=7, grid_x=3, grid_y=2)
+    output = main.default_output_path(params)
+    assert output.name == "knife_block_7knives_3x2.stl"
 
 
 def _capture_cli(monkeypatch: pytest.MonkeyPatch, argv: list[str], part: object | None = None) -> dict:
@@ -277,3 +285,95 @@ def test_cli_warns_when_model_exceeds_bed(
     assert result["exit_code"] == 0
     assert "exceeds the print volume width" in err
     assert (tmp_path / "big.stl").exists()
+
+
+def _capture_knife_block_cli(monkeypatch: pytest.MonkeyPatch, argv: list[str], part: object | None = None) -> dict:
+    """Run the CLI with knife-block geometry/export mocked, returning what was built."""
+    captured: dict = {}
+    stub = part if part is not None else _stub_part(x=125.5, y=83.5, z=18.0)
+
+    def fake_knife_block(params: KnifeBlockParameters) -> object:
+        captured["params"] = params
+        return stub
+
+    monkeypatch.setattr(main, "create_knife_blade_block", fake_knife_block)
+    monkeypatch.setattr(main, "export_bin", lambda _part, path: (path.touch(), path)[1])
+
+    captured["exit_code"] = main.main(argv)
+    return captured
+
+
+@pytest.mark.scenario("knife-blade-block", "Generate a block from valid parameters")
+def test_cli_knife_block_flag_builds_a_block(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """--knife-block builds a KnifeBlockParameters set with the default 7-knife layout."""
+    result = _capture_knife_block_cli(monkeypatch, ["--knife-block", "--output", str(tmp_path / "kb.stl")])
+    assert result["exit_code"] == 0
+    assert isinstance(result["params"], KnifeBlockParameters)
+    assert result["params"].knife_count == 7
+
+
+def test_cli_knife_block_count_and_handle_flags_apply(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """--knife-count/--handle-width-mm/--handle-gap-mm override the knife block defaults."""
+    result = _capture_knife_block_cli(
+        monkeypatch,
+        [
+            "--knife-block",
+            "--knife-count", "5",
+            "--handle-width-mm", "20",
+            "--handle-gap-mm", "8",
+            "--output", str(tmp_path / "kb.stl"),
+        ],
+    )
+    assert result["params"].knife_count == 5
+    assert result["params"].handle_width_mm == 20.0
+    assert result["params"].handle_gap_mm == 8.0
+
+
+def test_cli_knife_block_reuses_grid_flags(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """--grid-x/--grid-y apply to the knife block's own footprint in --knife-block mode."""
+    result = _capture_knife_block_cli(
+        monkeypatch,
+        ["--knife-block", "--grid-x", "4", "--grid-y", "3", "--output", str(tmp_path / "kb.stl")],
+    )
+    assert result["params"].grid_x == 4
+    assert result["params"].grid_y == 3
+
+
+def test_cli_knife_block_default_output_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Omitting --output in --knife-block mode names the file after the knife block, not a bin."""
+    monkeypatch.chdir(tmp_path)
+    result = _capture_knife_block_cli(monkeypatch, ["--knife-block"])
+    assert result["exit_code"] == 0
+    assert any(p.name == "knife_block_7knives_3x2.stl" for p in tmp_path.iterdir())
+
+
+@pytest.mark.scenario("knife-blade-block", "Warn when the tallest knife will not clear the drawer")
+def test_cli_knife_block_drawer_clearance_warns(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """A shallow --drawer-height-mm triggers the drawer clearance warning, still exports."""
+    result = _capture_knife_block_cli(
+        monkeypatch,
+        ["--knife-block", "--drawer-height-mm", "50", "--output", str(tmp_path / "kb.stl")],
+    )
+    err = capsys.readouterr().err
+    assert result["exit_code"] == 0
+    assert "exceeds the drawer's internal height" in err
+    assert (tmp_path / "kb.stl").exists()
+
+
+@pytest.mark.scenario("knife-blade-block", "No warning when everything clears")
+def test_cli_knife_block_default_drawer_height_emits_no_warning(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """The default drawer height and blade depth for the target set produce no warning."""
+    _capture_knife_block_cli(monkeypatch, ["--knife-block", "--output", str(tmp_path / "kb.stl")])
+    assert "drawer" not in capsys.readouterr().err.lower()
+
+
+def test_cli_regular_bin_defaults_are_unchanged(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Omitting --knife-block leaves the existing default KitchenBin behaviour untouched."""
+    result = _capture_cli(monkeypatch, ["--output", str(tmp_path / "plain.stl")])
+    assert result["exit_code"] == 0
+    assert result["kind"] == "kitchen"
+    assert isinstance(result["params"], BinParameters)

@@ -351,7 +351,7 @@ class SideCutoutProfile(BaseSketchObject):
         super().__init__(filleted_face, rotation, align, mode)
 
 
-def _rounded_panel(
+def rounded_panel(
     width: float,
     height: float,
     radius: float,
@@ -392,12 +392,12 @@ class KitchenBin(BasePartObject):
             floor_z = base_top.center().Z
 
             with BuildSketch(base_top) as wall_sketch:
-                _rounded_panel(
+                rounded_panel(
                     params.grid_x * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM,
                     params.grid_y * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM,
                     params.base_corner_radius_mm,
                 )
-                _rounded_panel(
+                rounded_panel(
                     params.effective_pocket_width_mm,
                     params.effective_pocket_length_mm,
                     params.pocket_corner_radius_mm,

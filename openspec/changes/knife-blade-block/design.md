@@ -39,8 +39,10 @@ Store knives lying flat, edge-down, blades through a central block, handles alte
 *Rationale:* handles are ~26 mm wide but blades only 2–3 mm; alternating puts same-end handles two lanes
 apart, so `lane_pitch = (handle_width_mm + handle_gap_mm) / 2` — roughly half the pitch a handle would
 otherwise force. *Alternative considered:* holding by the handle (wastes the long blade length) and
-non-alternating lanes (pitch forced by handle width, ~2× wider). *Maps to:* "Alternating head-to-toe lane
-arrangement" and its pitch scenario.
+non-alternating lanes (pitch forced by handle width, ~2× wider). *Implementation note:* each lane's slot is
+symmetric along its length, so the block's own geometry does not encode a direction per lane -- alternation
+is realised by how a person loads knives, not by the generated shape. *Maps to:* "Alternating head-to-toe
+lane arrangement" and its pitch scenario.
 
 ### Decision 2: One central block, not per-end blocks
 
@@ -103,10 +105,19 @@ Prima-set preset now or after the first physical print (see Open Questions).
   library/CLI packaging. → Keep the block in the same geometry module or a clearly-scoped sibling, exported
   through the same public factory pattern as the bins.
 
-## Open Questions
+## Open Questions (resolved during implementation)
 
-- Add the named 7-knife Prima preset now, or after the first successful physical print (UAT)?
-- Should the drawer-clearance check *warn* (like `check_print_bed`) or *reject* in `validate()` — or both,
-  as it is genuinely a fit constraint rather than only advisory?
-- Confirm the exact default slot mouth width / taper angle / depth from caliper measurements before the
-  first print.
+- **Named preset now, or after the first print?** Resolved: no separate preset. `KnifeBlockParameters`'s
+  defaults (7 lanes, 26 mm handle width, 10 mm gap, 2-3 mm spine range) already *are* the Prima 7-knife
+  set -- that's what they were sized for. Building a parallel `Preset`/`PRESETS` registry (the existing
+  one is typed to `BinParameters` factories) would add CLI/registry plumbing without adding capability.
+  Revisit if a second named variant (e.g. the deferred angled-slot cleaver block) needs `--preset`-style
+  switching between named parameter sets. Provenance is ORIGINAL (own measurements, own design) and the
+  model is CC BY-SA 4.0 like the other original bins; recorded in the README rather than a `Preset` entry
+  since the licensing framework tracks provenance per generated model, not only via that registry.
+- **Warn or reject on drawer clearance?** Resolved: warn, exactly like `check_print_bed` -- non-blocking,
+  printed to stderr, export still proceeds. Consistent with treating it as an advisory fit check the user
+  can override (e.g. a shallower drawer with a taller knife they've decided to accept).
+- **Slot mouth / taper / depth defaults:** Resolved via the notebook prototype (`notebooks/knife_block.ipynb`)
+  and physically verified: mouth 4.5 mm, apex (relief) 1.0 mm, taper depth 12 mm, relief depth 3 mm,
+  minimum deck 3 mm -- giving a deck height of 18 mm.

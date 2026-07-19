@@ -131,6 +131,57 @@ uv run python main.py --grid-x 6 --grid-y 4 --bed-x 235 --bed-y 235
 The CLI validates parameter ranges and returns a non-zero exit code with
 actionable text when values are invalid (including an unknown `--preset`).
 
+## Knife blade block
+
+`--knife-block` builds a `KnifeBladeBlock` instead of a bin: a small Gridfinity module that holds
+kitchen knives lying flat, edge-down, gripped by their blades rather than their handles. Knives
+alternate head-to-toe so their handles fall to opposite ends, and every blade passes through the
+same block, in a tapered slot that self-centres blades of different thickness and keeps the cutting
+edge floating clear of the printed material.
+
+```bash
+uv run python main.py --knife-block
+```
+
+### Lane geometry
+
+![Knife blade block lane geometry: alternating handles, lane pitch, and the generated block](docs/images/knife-block-lanes.svg)
+
+Because a handle (`handle_width_mm`) is wider than a blade, two knives with handles at the *same*
+end must sit two lanes apart, not one — alternating head-to-toe is what makes that work. The lane
+pitch is derived from that constraint:
+
+```text
+lane_pitch_mm = (handle_width_mm + handle_gap_mm) / 2
+```
+
+`handle_gap_mm` is the finger clearance left between two same-end handles once the pitch is applied.
+The default (7 lanes, 26 mm handle width, 10 mm handle gap) is sized for a set of seven
+similarly-lengthed kitchen knives with 2–3 mm spines — it produces a 3×2 Gridfinity module (126 mm
+across seven 18 mm lanes). Override the layout with `--knife-count`, `--handle-width-mm`, and
+`--handle-gap-mm`; `--grid-x`/`--grid-y` set the block's own footprint in this mode.
+
+**Only the block is generated.** The handle-rest zones at each end are generic — fill them with
+plain [`gridfinity_build123d`](https://github.com/Ruudjhuu/gridfinity_build123d) blanks rather than
+anything this project produces. The one interface between the block and those blanks is the block's
+own height: use a blank of that height under the handles so the knives rest level. Query it directly:
+
+```python
+from knife_block import KnifeBlockParameters
+
+KnifeBlockParameters().deck_height_mm  # 18.0 mm by default
+```
+
+`--drawer-height-mm`, `--max-blade-depth-mm`, and `--drawer-clearance-mm` control a drawer-fit
+check (in the same non-blocking, warn-and-still-export spirit as the print-bed check): it warns
+when the block's height plus your tallest knife's blade depth plus a safety margin would exceed
+your drawer's internal height. Defaults assume a 78 mm drawer and a 40 mm typical blade depth —
+override `--max-blade-depth-mm` for anything taller, such as a cleaver (not part of the default
+7-knife set; a cleaver needs its own, currently unimplemented, angled-slot variant).
+
+This is an original design (our own measurements and profiles), CC BY-SA 4.0 like the project's
+other original bins.
+
 ## Licensing
 
 This project ships two kinds of work under two different licenses:

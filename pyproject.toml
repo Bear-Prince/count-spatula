@@ -54,7 +54,7 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-source = ["cutlery_bin", "main"]
+source = ["cutlery_bin", "knife_block", "main"]
 branch = true
 
 [tool.coverage.report]

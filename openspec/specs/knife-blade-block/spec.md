@@ -1,4 +1,12 @@
-## ADDED Requirements
+# knife-blade-block Specification
+
+## Purpose
+
+Generate a parametric Gridfinity module that stores kitchen knives lying flat, held by their blades in a
+single block of tapered, self-centring slots, arranged alternating head-to-toe -- so a full knife set
+packs into a fraction of the space a handle-held rack would need, and each knife lifts straight out.
+
+## Requirements
 
 ### Requirement: Knife blade block holds knives by the blade
 

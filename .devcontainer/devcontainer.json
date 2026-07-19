@@ -12,8 +12,9 @@
 		"ghcr.io/devcontainers-extra/features/pnpm:2": {},
 		"ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
 	},
-	// Install the Python environment, Node tooling (openspec, markdownlint), and git hooks.
-	"postCreateCommand": "uv sync && pnpm install && uv run pre-commit install",
+	// Install librsvg2-bin (rsvg-convert, for rendering docs/images/*.svg to PNG for visual review),
+	// the Python environment, Node tooling (openspec, markdownlint), and git hooks.
+	"postCreateCommand": "sudo apt-get update && sudo apt-get install -y librsvg2-bin && uv sync && pnpm install && uv run pre-commit install",
 	"customizations": {
 		"vscode": {
 			"extensions": [
