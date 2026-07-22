@@ -17,12 +17,20 @@ from cutlery_bin import (
     preset_requires_cutouts,
     resolve_preset,
 )
+from knife_block import KnifeBlockParameters, check_drawer_clearance, create_knife_blade_block
 
 # Default print volume in millimetres (width x depth x height). Printers quote build volumes in mm,
 # so these are plain millimetres with no unit conversion. Override per axis with --bed-x/--bed-y/--bed-z.
 DEFAULT_BED_X_MM = 220.0
 DEFAULT_BED_Y_MM = 220.0
 DEFAULT_BED_Z_MM = 240.0
+
+# Defaults for the --knife-block drawer-clearance check. The height matches the target drawer this
+# feature was designed for; the blade depth is a conservative typical chef's-knife spine-to-edge
+# figure -- override with --max-blade-depth-mm for a taller knife (e.g. a cleaver).
+DEFAULT_DRAWER_HEIGHT_MM = 78.0
+DEFAULT_MAX_BLADE_DEPTH_MM = 40.0
+DEFAULT_DRAWER_CLEARANCE_MM = 5.0
 
 
 def export_bin(part: Shape, output_path: Path) -> Path:
@@ -101,6 +109,38 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Sideways swing of a wave divider in mm; required when --divider-profile is 'wave'.",
     )
+    parser.add_argument(
+        "--knife-block",
+        action="store_true",
+        help="Build a KnifeBladeBlock instead of a bin. --grid-x/--grid-y apply to the block's own "
+        "footprint; bin-only flags (pocket, cutout, divider options) are ignored.",
+    )
+    parser.add_argument("--knife-count", type=int, default=None, help="Number of knife lanes.")
+    parser.add_argument("--handle-width-mm", type=float, default=None, help="Widest supported knife handle.")
+    parser.add_argument(
+        "--handle-gap-mm",
+        type=float,
+        default=None,
+        help="Finger clearance between two same-end handles.",
+    )
+    parser.add_argument(
+        "--drawer-height-mm",
+        type=float,
+        default=DEFAULT_DRAWER_HEIGHT_MM,
+        help="Drawer internal height in mm, for the --knife-block drawer-clearance check.",
+    )
+    parser.add_argument(
+        "--max-blade-depth-mm",
+        type=float,
+        default=DEFAULT_MAX_BLADE_DEPTH_MM,
+        help="Tallest supported knife's spine-to-edge depth in mm, for the drawer-clearance check.",
+    )
+    parser.add_argument(
+        "--drawer-clearance-mm",
+        type=float,
+        default=DEFAULT_DRAWER_CLEARANCE_MM,
+        help="Extra safety margin in mm added on top of the deck height and blade depth.",
+    )
     parser.add_argument("--bed-x", type=float, default=DEFAULT_BED_X_MM, help="Print bed width in mm.")
     parser.add_argument("--bed-y", type=float, default=DEFAULT_BED_Y_MM, help="Print bed depth in mm.")
     parser.add_argument("--bed-z", type=float, default=DEFAULT_BED_Z_MM, help="Maximum print height in mm.")
@@ -170,8 +210,24 @@ def create_parameters(args: argparse.Namespace) -> BinParameters:
     return result
 
 
-def default_output_path(params: BinParameters, fmt: str = "stl") -> Path:
-    """Build a deterministic default output path for the generated bin."""
+def create_knife_block_parameters(args: argparse.Namespace) -> KnifeBlockParameters:
+    """Build KnifeBlockParameters from parsed CLI arguments."""
+    simple = {
+        "knife_count": args.knife_count,
+        "handle_width_mm": args.handle_width_mm,
+        "handle_gap_mm": args.handle_gap_mm,
+        "grid_x": args.grid_x,
+        "grid_y": args.grid_y,
+    }
+    overrides = {key: value for key, value in simple.items() if value is not None}
+    return replace(KnifeBlockParameters(), **overrides)
+
+
+def default_output_path(params: BinParameters | KnifeBlockParameters, fmt: str = "stl") -> Path:
+    """Build a deterministic default output path for the generated bin or knife block."""
+    if isinstance(params, KnifeBlockParameters):
+        file_name = f"knife_block_{params.knife_count}knives_{params.grid_x}x{params.grid_y}.{fmt}"
+        return Path.cwd() / file_name
     kind = "cutlery_bin" if params.divisions >= 2 else "kitchen_bin"
     height_token = f"{params.effective_height_mm:g}".replace(".", "p")
     file_name = f"{kind}_{params.grid_x}x{params.grid_y}_h{height_token}.{fmt}"
@@ -184,7 +240,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        params = create_parameters(args)
+        params = create_knife_block_parameters(args) if args.knife_block else create_parameters(args)
         params.validate()
         fmt = args.format if args.format is not None else "stl"
         if args.output is not None and args.format is not None:
@@ -199,10 +255,19 @@ def main(argv: list[str] | None = None) -> int:
         if not output_path.parent.exists():
             msg = f"Output directory does not exist: {output_path.parent}"
             raise FileNotFoundError(msg)
-        part = create_cutlery_bin(params) if params.divisions >= 2 else create_kitchen_bin(params)
+        if args.knife_block:
+            part = create_knife_blade_block(params)
+        else:
+            part = create_cutlery_bin(params) if params.divisions >= 2 else create_kitchen_bin(params)
         size = part.bounding_box().size
         for warning in check_print_bed(size.X, size.Y, size.Z, args.bed_x, args.bed_y, args.bed_z):
             print(f"Warning: {warning}", file=sys.stderr)
+        if args.knife_block:
+            drawer_warnings = check_drawer_clearance(
+                params.deck_height_mm, args.max_blade_depth_mm, args.drawer_clearance_mm, args.drawer_height_mm
+            )
+            for warning in drawer_warnings:
+                print(f"Warning: {warning}", file=sys.stderr)
         exported_file = export_bin(part, output_path)
     except (ValueError, FileNotFoundError) as exc:
         print(f"Error: {exc}", file=sys.stderr)

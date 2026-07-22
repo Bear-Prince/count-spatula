@@ -15,11 +15,12 @@
 	},
 	// libgl1 (Mesa) is required by OCP/build123d's OpenCASCADE bindings even for headless geometry
 	// builds. openscad/imagemagick/xvfb are README render tooling (render_models.py) — Codespaces
-	// has no X server, so OpenSCAD's OpenGL context needs xvfb-run. `apt-get update` is allowed to
-	// fail here (an unrelated third-party repo added by the node feature can be unsigned) as long
-	// as the Debian package lists it needs land. Then install the Python environment, Node tooling
+	// has no X server, so OpenSCAD's OpenGL context needs xvfb-run. librsvg2-bin (rsvg-convert) is
+	// for rendering docs/images/*.svg to PNG for visual review. `apt-get update` is allowed to fail
+	// here (an unrelated third-party repo added by the node feature can be unsigned) as long as the
+	// Debian package lists it needs land. Then install the Python environment, Node tooling
 	// (openspec, markdownlint), and git hooks.
-	"postCreateCommand": "sudo apt-get update || true && sudo apt-get install -y libgl1 openscad imagemagick xvfb && uv sync && pnpm install && uv run pre-commit install",
+	"postCreateCommand": "sudo apt-get update || true && sudo apt-get install -y libgl1 openscad imagemagick xvfb librsvg2-bin && uv sync && pnpm install && uv run pre-commit install",
 	"customizations": {
 		"vscode": {
 			"extensions": [
