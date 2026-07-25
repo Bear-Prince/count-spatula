@@ -3,7 +3,7 @@ schema: spec-driven
 context: |
   Project: count-spatula
   Domain: parametric 3D model generator for Gridfinity-compatible kitchen bins.
-  Primary output: STL files for 3D printing, including curated preset artifacts for releases.
+  Primary output: STL and 3MF files for 3D printing, including curated preset artifacts for releases.
 
   Tech stack:
   - Python 3.13
@@ -14,10 +14,16 @@ context: |
   - Notebook prototyping: Jupyter
 
   Repository structure intent:
-  - chop_bin.py is the main source of truth for model geometry behavior.
-  - main.py is legacy script flow and should evolve into a stable CLI entrypoint.
+  - cutlery_bin.py is the source of truth for all model geometry behavior. It defines BinParameters,
+    KitchenBin, CutleryBin, the named presets, and the print-bed check.
+  - main.py is the CLI layer: it parses arguments into BinParameters, exports STL or 3MF, and returns
+    process exit codes.
+  - render_models.py generates the README render set.
   - notebooks/ are proof-of-concept and exploration, not the supported public interface.
-  - tests/ should validate geometry behavior, option handling, and export behavior.
+  - tests/ should validate geometry behavior, option handling, and export behavior. Tests are linked to
+    spec scenarios with @pytest.mark.scenario("<capability>", "<scenario name>"); a guard fails when a
+    scenario has no claiming test, so specs and tests must move together.
+  - UAT.md lists the cases to regenerate and eyeball in a slicer before archiving a change.
 
   Product and requirements approach:
   - Frame work as epics and user stories.
@@ -47,18 +53,24 @@ context: |
   - Prefer Markdown with .md extension for documentation files.
 
   Installation and running:
-  - Install development dependencies with: uv pip install -e .[dev]
-  - Run the generator with: python main.py
-  - Running main.py generates chopping_blocks_6x4.stl in the repository root.
+  - Install dependencies with: uv sync (dev tools live in the [dependency-groups] dev group, so the
+    optional-extras form does not install them).
+  - Run the generator with: uv run python main.py
+  - Running main.py with no arguments generates kitchen_bin_2x4_h56.stl in the repository root; the default
+    filename is derived from the parameters and the selected format.
+  - Run a named preset with: uv run python main.py --preset chop-board
   - Validate OpenSpec YAML syntax with: uv run python -c "import pathlib, yaml; yaml.safe_load(pathlib.Path('openspec/config.yaml').read_text(encoding='utf-8'))"
+  - Run the OpenSpec CLI with: pnpm exec openspec --help
   - Run lint checks with: uv run ruff check .
-  - Run tests with: uv run pytest
+  - Run tests with: uv run pytest; skip the slow real-geometry builds with: uv run pytest -m "not slow"
+  - Pre-commit hooks run ruff, markdownlint, and yamllint on commit, and pytest on push. Install them with:
+    uv run pre-commit install
   - For 3D model viewing in VS Code, use ocp-vscode; show_all() in main.py displays the model.
 
 rules:
   proposal:
     - Include sections for Epic, User Stories, Acceptance Criteria, Non-goals, and Test Strategy.
-    - Use User Story format: As a <user>, I want <capability>, so that <benefit>.
+    - "Use User Story format: As a <user>, I want <capability>, so that <benefit>."
     - Express acceptance criteria as scenario-style statements, preferably Given/When/Then.
     - Make scope boundaries explicit so proposals stay implementable on a single branch.
 
