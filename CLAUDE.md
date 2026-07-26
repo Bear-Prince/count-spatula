@@ -73,6 +73,13 @@ See [openspec/WORKFLOW.md](openspec/WORKFLOW.md) for practical recipes — how t
 
 Branch conventions: `feature/<slug>`, `fix/<slug>`, `docs/<slug>`, `refactor/<slug>`, `chore/<slug>`. Open a PR after branch work is complete; do not merge without user review. Any PR with AI-generated code must disclose the coding agent and model used.
 
+**Reviewing a change's artifacts:** the markdown files under `openspec/changes/<name>/` (`proposal.md`,
+`design.md`, `specs/**/*.md`, `tasks.md`) remain the source of truth — `openspec validate`, the
+traceability guard, and archiving all operate on them directly, so they always get written regardless.
+When asked to publish, present, or otherwise make a change's artifacts easier to review, render them as a
+single designed Artifact page (via Claude Code's `Artifact` tool) restructuring the same content into a
+scannable review packet — not on every propose/apply, only on request.
+
 ## Style conventions
 
 - Python: 4 spaces, 120-char line length, UTF-8, LF endings.
