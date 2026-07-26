@@ -1,8 +1,8 @@
 ## 1. Resolve the open question
 
-- [ ] 1.1 Confirm with the user whether `--height-mm` on a lipped bin means wall height with the lip above it
-      (current design, matching upstream `Bin`) or total height including the lip; record the answer in
-      `design.md` under Open Questions before writing geometry code
+- [x] 1.1 Confirmed with the user: `--height-mm` / `height_in_units` on a lipped bin mean wall height with
+      the lip added above it (matching upstream `Bin`), not total height including the lip. Recorded as
+      Decision 5 in `design.md`.
 
 ## 2. Parameters and validation
 
@@ -50,8 +50,15 @@
 - [ ] 6.2 Run `uv run pytest tests/test_spec_traceability.py` and confirm no scenario is unclaimed and no
       marker names a non-existent scenario
 - [ ] 6.3 Update the `KitchenBin` docstring and the Architecture section of `CLAUDE.md` to mention the
-      optional stacking lip
+      optional stacking lip, defaulting to disabled
 - [ ] 6.4 Add the `--stacking-lip` flag to the command examples in `CLAUDE.md`
+- [ ] 6.5 Add a "Stacking lip" section to `README.md` (alongside the existing "Cutout geometry" /
+      "Other options" sections), and state explicitly, per design Decision 5: the lip is swept on
+      *after* the bin's wall height is built, so a lipped bin's total height is the requested
+      `--height-mm` / `height_in_units` **plus** ~4.12 mm, not equal to it — and that the lip is off by
+      default, so this only applies when `--stacking-lip` is passed
+- [ ] 6.6 Cross-reference the same additive-height point from `CLAUDE.md`'s command examples (task 6.4) so
+      it is not stated only in the README
 
 ## 7. Verification and UAT
 

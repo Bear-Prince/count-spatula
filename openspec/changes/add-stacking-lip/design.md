@@ -107,6 +107,25 @@ would consume the entire wall and reach past the pocket edge.
 
 The chop-board preset is unaffected: its walls are 3.75 mm (X) and 15.75 mm (Y), comfortably clear of 2.6 mm.
 
+### Decision 5: Lip height is additive to the stated height, and must be documented as such
+
+Resolving the open question below: `--height-mm` / `height_in_units` continue to mean wall height above
+the inner floor, unaffected by whether a lip is requested. The lip sits *above* that height, matching
+upstream `Bin` (whose docstring notes the lip's size "is not included in height"). A lipped bin's actual
+total height therefore exceeds the requested height by ~4.12 mm.
+
+This is easy to miss, so it must be stated explicitly rather than left implicit in the parameter
+description: the README's stacking-lip section and `CLAUDE.md` both need a line to the effect of "the lip
+is added after the bin's wall height is built, so the model's total height is the requested height plus
+~4.12 mm, not the requested height itself." This is the same fact as the print-bed risk below, surfaced in
+user-facing docs rather than only in code comments.
+
+**Alternative considered:** silently absorb the lip into the requested height (e.g., build ~4.12 mm less
+wall when a lip is requested, so total height matches the request exactly). Rejected — this would make
+wall height, and therefore pocket depth, vary depending on whether a lip is enabled, coupling two things
+that should stay independent, and would drift from upstream `Bin`'s established semantics for no real
+benefit.
+
 ## Risks / Trade-offs
 
 - **A lip on a cutout bin is discontinuous** → By design, not a defect; a stacked bin bears on the intact
@@ -130,8 +149,4 @@ changes behaviour. Rollback is removing the flag.
 
 ## Open Questions
 
-- Should a lipped bin's `--height-mm` be interpreted as total height *including* the lip, rather than wall
-  height with the lip on top? The current design keeps the existing meaning (lip sits above the stated
-  height), matching upstream `Bin`, whose docstring notes that lip size "is not included in height". Worth
-  confirming this matches expectations before implementation, since it affects how a lipped bin is sized to
-  a target overall height.
+None outstanding. The height-semantics question originally listed here is resolved by Decision 5.

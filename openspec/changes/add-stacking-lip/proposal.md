@@ -59,3 +59,6 @@ None. The lip is additive and defaults to off:
   bins already close to the limit. Correct behaviour, but a visible change in output for lipped builds.
 - **Licensing**: no change. The lip profile comes from the upstream library and the published standard, so
   it does not alter any preset's `Provenance`.
+- **Docs**: `README.md` and `CLAUDE.md` must state explicitly that the lip is swept on *after* the bin's
+  wall height is built, so a lipped bin's total height is the requested `--height-mm` / `height_in_units`
+  plus ~4.12 mm, not equal to it. Easy to miss since the parameter's meaning does not change.
