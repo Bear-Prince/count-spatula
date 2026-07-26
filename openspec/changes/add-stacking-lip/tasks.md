@@ -27,13 +27,18 @@
 
 ## 4. Cutout interaction
 
-- [ ] 4.1 Raise the `cutout_height` passed to `SideCutoutProfile` so the slot cuts above the top of the lip
-      when a lip is present (per design Decision 2)
-- [ ] 4.2 Confirm the cutout's rim fillet geometry is unchanged by the added height, since the flare is
-      anchored to floor-relative dimensions
+- [ ] 4.1 Extend `SideCutoutProfile` with a straight-sided section above the existing profile, spanning the
+      full arc width and running from the wall top past the top of the lip. Do **not** simply raise
+      `cutout_height` — the flare patches are anchored to the profile's top, so raising it drags the flare
+      up into the lip (per design Decision 2)
+- [ ] 4.2 Add a regression test pinning the wall-top opening at the full arc width (106.2 mm on chop-board),
+      so a future change that moves the flare off the wall top fails loudly rather than silently costing
+      hand access
 - [ ] 4.3 Add a test asserting no lip material spans either handle slot opening on a cutout-bearing lipped bin
 - [ ] 4.4 Add a test asserting the lip forms one uninterrupted loop when cutouts are disabled
 - [ ] 4.5 Add a test asserting the handle slot stays open from the inner floor to above the lip
+- [ ] 4.6 Add a test asserting the lip terminates at the rim's widest point (±`cutout_arc_*`), confirming it
+      does not follow the flare's curve down into the opening
 
 ## 5. CLI
 
@@ -66,5 +71,6 @@
 - [ ] 7.2 Confirm the no-lip path is byte-for-byte unchanged by regenerating a default bin and the chop-board
       preset and diffing against artifacts built before the change
 - [ ] 7.3 Export a lipped chop-board bin and a lipped 2×4 cutlery bin, and send both to the user for UAT in a
-      slicer — checking the lip mates with a base and that the handle slots are clear
+      slicer — checking the lip mates with a base, that the handle slots are clear, and specifically that
+      the lip's termination above the rim fillet's tangent point slices cleanly (per design Risks)
 - [ ] 7.4 Sync the delta spec into `openspec/specs/` and archive the change once UAT passes

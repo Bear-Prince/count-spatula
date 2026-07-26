@@ -78,6 +78,18 @@ cutout. A discontinuous lip on a cutout-bearing bin is correct behaviour, not a 
 - **WHEN** a bin is generated with both side cutouts and the stacking lip enabled
 - **THEN** the handle slot remains open from the inner floor to above the top of the lip
 
+#### Scenario: Lip terminates at the cutout's widest point
+
+- **WHEN** a bin is generated with both side cutouts and the stacking lip enabled
+- **THEN** the lip ends in a vertical face at the cutout's widest extent, rather than following the rim
+  fillet's curve down into the opening
+
+#### Scenario: Cutout does not narrow the opening at the wall top
+
+- **WHEN** a bin is generated with both side cutouts and the stacking lip enabled
+- **THEN** the handle slot's opening at the top of the wall is the same width as it is without a lip, so
+  the rim fillet still reaches its widest at the wall top rather than within the lip
+
 ### Requirement: Lip height is included in print-bed evaluation
 
 The system SHALL evaluate a lipped bin against the configured print volume using the model's actual
