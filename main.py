@@ -91,6 +91,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Disable the side cutouts and leave the walls (and any dividers) solid.",
     )
     parser.add_argument(
+        "--stacking-lip",
+        action="store_const",
+        const=True,
+        default=None,
+        dest="stacking_lip",
+        help=(
+            "Add a Gridfinity stacking lip to the outer top rim so another bin can sit on top. "
+            "The lip is added above the requested height, so the model ends up about 4.12 mm taller."
+        ),
+    )
+    parser.add_argument(
         "--divisions",
         type=int,
         default=None,
@@ -173,6 +184,7 @@ def create_parameters(args: argparse.Namespace) -> BinParameters:
         "base_corner_radius_mm": args.base_corner_radius_mm,
         "cutout_radius_mm": args.cutout_radius_mm,
         "cutouts_enabled": args.cutouts_enabled,
+        "stacking_lip": args.stacking_lip,
         "divisions": args.divisions,
         "divider_thickness_mm": args.divider_thickness_mm,
         "divider_profile": args.divider_profile,

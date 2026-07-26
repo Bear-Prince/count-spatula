@@ -17,6 +17,11 @@ uv run python main.py --preset chop-board --output build/chop.stl
 # Build a cutlery bin (pocket split into equal columns) and export to 3MF
 uv run python main.py --grid-x 2 --grid-y 4 --divisions 3 --format 3mf
 
+# Add a Gridfinity stacking lip so bins can stack (off by default). The lip is swept on after the
+# wall height is built, so the model ends up ~4.12 mm taller than the requested height, not equal to it.
+uv run python main.py --stacking-lip
+uv run python main.py --preset chop-board --stacking-lip
+
 # Run tests
 uv run pytest
 
@@ -53,7 +58,7 @@ Pre-commit hooks run `ruff check`, `markdownlint`, and `yamllint` on commit; `py
 
 - `BinParameters` - a `@dataclass(slots=True)` holding every configurable dimension. Call `.validate()` before building; it accumulates all errors and raises a single `ValueError`. Pocket dimensions default to a uniform-wall-thickness derivation but can be set explicitly (e.g. for the chop-board preset).
 - `SideCutoutProfile(BaseSketchObject)` - the side cutout profile (a mirrored fillet polyline). Used internally by `KitchenBin`.
-- `KitchenBin(BasePartObject)` - a Gridfinity bin with a single explicitly-sized rounded pocket and optional full-height side cutouts. Builds on top of `gridfinity_build123d.BaseEqual` for the Gridfinity base.
+- `KitchenBin(BasePartObject)` - a Gridfinity bin with a single explicitly-sized rounded pocket and optional full-height side cutouts. Builds on top of `gridfinity_build123d.BaseEqual` for the Gridfinity base. An optional stacking lip (`stacking_lip`, **off by default**) is swept along the outer top rim using `gridfinity_build123d.StackingLip`, before the cutout is subtracted; once the slots are cut there is no closed wire left to sweep. The lip sits *above* the requested height, adding ~4.12 mm to the model's total height. Where cutouts are enabled the slot is extended through the lip by a straight-sided section at the full arc width; do **not** raise `cutout_height` to achieve this, as the rim flare is anchored to the profile's top and would be dragged up into the lip, narrowing the opening at the wall top.
 - `CutleryBin(KitchenBin)` - adds straight, single-axis dividers that split the pocket into equal columns (`params.divisions >= 2`); the side cutout runs through the dividers. Generic equal-compartment grids are out of scope here - use `gridfinity_build123d` directly for those.
 - `create_kitchen_bin(params)` / `create_cutlery_bin(params)` - thin factories; the public entry points from tests and `main.py`.
 - `PRESETS` / `resolve_preset(name)` / `preset_requires_cutouts(name)` - named parameter presets (e.g. `"chop-board"`, which reproduces the original chopping-board bin and forbids disabling its cutouts).

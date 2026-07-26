@@ -34,7 +34,8 @@ from build123d import (
     extrude,
     make_face,
 )
-from gridfinity_build123d import BaseEqual
+from gridfinity_build123d import BaseEqual, StackingLip
+from gridfinity_build123d.constants import gridfinity_standard
 
 GRIDFINITY_PITCH_MM = 42 * MM  # Standard Gridfinity grid pitch in mm per unit.
 GRIDFINITY_HEIGHT_UNIT_MM = 7 * MM  # Millimetres per Gridfinity height unit.
@@ -57,6 +58,16 @@ DIVIDER_WAVE = "wave"
 DIVIDER_PROFILES = (DIVIDER_STRAIGHT, DIVIDER_WAVE)
 MIN_CHANNEL_GAP = 2.0 * MM  # mm; minimum printable gap a wave divider must leave to its neighbour or wall.
 WAVE_SAMPLE_COUNT = 64  # Number of segments used to approximate a wave divider's sine curve.
+
+# How far the Gridfinity stacking lip reaches inward from the outer wall face, derived from the upstream
+# `gridfinity_standard.stacking_lip` constants rather than hard-coded, so it tracks the pinned library.
+STACKING_LIP_REACH_MM = (
+    gridfinity_standard.stacking_lip.height_1 + gridfinity_standard.stacking_lip.height_3_bin
+) * MM
+# The lip's lowest step; a wall thinner than this has nothing at all to seat the lip on.
+STACKING_LIP_SEAT_MM = gridfinity_standard.stacking_lip.height_1 * MM
+# Extra height cut above the lip so the side cutout passes cleanly through it rather than stopping flush.
+STACKING_LIP_CUT_MARGIN_MM = 0.5 * MM
 
 # The chop-board preset reproduces the original chopping-board bin: an explicit, non-uniform-wall pocket.
 CHOP_GRID_X = 4
@@ -90,6 +101,7 @@ class BinParameters:
     cutout_offset_end_units: int = DEFAULT_CUTOUT_OFFSET_UNITS
     cutout_radius_mm: float = DEFAULT_CUTOUT_RADIUS
     cutouts_enabled: bool = True
+    stacking_lip: bool = False
     divisions: int = 1
     divider_thickness_mm: float = 2.0
     divider_profile: str = DIVIDER_STRAIGHT
@@ -115,6 +127,22 @@ class BinParameters:
         if self.pocket_width_mm is not None:
             return self.pocket_width_mm
         return self.grid_x * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM - 2 * self.wall_thickness_mm
+
+    @property
+    def actual_wall_thickness_x_mm(self) -> float:
+        """Wall thickness along X, measured from the built geometry rather than ``wall_thickness_mm``.
+
+        ``wall_thickness_mm`` only *derives* the default pocket; when pocket dimensions are set explicitly
+        (as the chop-board preset does) the real wall is whatever is left between pocket and outer edge.
+        """
+        outer = self.grid_x * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM
+        return (outer - self.effective_pocket_width_mm) / 2
+
+    @property
+    def actual_wall_thickness_y_mm(self) -> float:
+        """Wall thickness along Y; see ``actual_wall_thickness_x_mm``."""
+        outer = self.grid_y * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM
+        return (outer - self.effective_pocket_length_mm) / 2
 
     @property
     def side_half_length_mm(self) -> float:
@@ -262,6 +290,32 @@ class BinParameters:
             if self.cutout_radius_mm >= self.effective_height_mm:
                 errors.append("cutout_radius_mm must be less than the effective bin height")
 
+        # The lip's reach is only a constraint when a lip is actually built.
+        if self.stacking_lip:
+            thinnest_wall = min(self.actual_wall_thickness_x_mm, self.actual_wall_thickness_y_mm)
+            if thinnest_wall < STACKING_LIP_SEAT_MM:
+                errors.append(
+                    f"wall is too thin for a stacking lip: the thinnest wall is {thinnest_wall:.2f} mm "
+                    f"and the lip needs at least {STACKING_LIP_SEAT_MM:.2f} mm to seat on; "
+                    "increase wall_thickness_mm or reduce the pocket dimensions"
+                )
+            else:
+                # A wall thinner than the lip's full reach is fine and normal -- the lip simply overhangs
+                # the pocket mouth, as it does on standard Gridfinity bins. It only becomes invalid if the
+                # two opposing overhangs close the mouth entirely.
+                overhang_x = max(0.0, STACKING_LIP_REACH_MM - self.actual_wall_thickness_x_mm)
+                overhang_y = max(0.0, STACKING_LIP_REACH_MM - self.actual_wall_thickness_y_mm)
+                if self.effective_pocket_width_mm - 2 * overhang_x <= 0:
+                    errors.append(
+                        "the stacking lip would close the pocket mouth across its width; "
+                        "increase the pocket width or the wall thickness"
+                    )
+                if self.effective_pocket_length_mm - 2 * overhang_y <= 0:
+                    errors.append(
+                        "the stacking lip would close the pocket mouth along its length; "
+                        "increase the pocket length or the wall thickness"
+                    )
+
         if errors:
             raise ValueError("Invalid bin parameters: " + "; ".join(errors))
 
@@ -284,11 +338,19 @@ class SideCutoutProfile(BaseSketchObject):
         cutout_arc_start: float,
         cutout_arc_end: float,
         cutout_radius: float,
+        lip_clearance_height: float = 0.0,
         rotation: RotationLike = (0, 0, 0),
         align: Align | tuple[Align, Align] | None = None,
         mode: Mode = Mode.ADD,
     ) -> None:
-        """Build the side cutout profile."""
+        """Build the side cutout profile.
+
+        ``lip_clearance_height`` extends the cut above ``cutout_height`` so the slot passes through a
+        stacking lip instead of letting it bridge the opening. It is added as a separate straight-sided
+        section at the full arc width -- *not* by raising ``cutout_height``, because the rim flare below
+        is anchored to the top of the profile and would be dragged upward with it, narrowing the opening
+        at the wall top and moving the flare onto the lip.
+        """
         # The fillet trims into the patch horizontally (by `radius`, into the arc_start/arc_end
         # margin below) and vertically (by `radius`, down into the wall) from the corner at the
         # patch's own bottom -- neither trim depends on the patch's height, so it only needs to be
@@ -348,6 +410,20 @@ class SideCutoutProfile(BaseSketchObject):
                 and (abs(v.X - cutout_length_end) < 1e-6 or abs(v.X - (-cutout_length_start)) < 1e-6)
             ]
             filleted_face = combined_face.fillet_2d(cutout_radius, rim_corners)
+
+        if lip_clearance_height > 0:
+            # Union a straight-sided block spanning the full arc width on top of the finished profile,
+            # sharing its top edge, so the rim flare stays exactly where it is at the wall top.
+            with BuildSketch() as extended:
+                add(filleted_face)
+                with Locations(((cutout_arc_end - cutout_arc_start) / 2, cutout_height)):
+                    Rectangle(
+                        cutout_arc_start + cutout_arc_end,
+                        lip_clearance_height,
+                        align=(Align.CENTER, Align.MIN),
+                    )
+            filleted_face = extended.sketch.faces()[0]
+
         super().__init__(filleted_face, rotation, align, mode)
 
 
@@ -367,7 +443,12 @@ def rounded_panel(
 
 
 class KitchenBin(BasePartObject):
-    """A Gridfinity bin with an explicitly-sized rounded pocket and optional side cutouts."""
+    """A Gridfinity bin with an explicitly-sized rounded pocket and optional side cutouts.
+
+    An optional Gridfinity stacking lip (``params.stacking_lip``, disabled by default) is swept along the
+    outer top rim so another bin can sit on top. The lip is added *above* the requested height rather than
+    inside it, so a lipped bin's total height is the requested height plus roughly 4.12 mm.
+    """
 
     def __init__(
         self,
@@ -410,6 +491,14 @@ class KitchenBin(BasePartObject):
             # Subclasses add interior dividers here, before the cutout, so the slot passes through them.
             self._add_interior(params, floor_z, top_z)
 
+            # The lip is swept before the cutout is subtracted: once the slots are cut the rim is two
+            # open arcs, with no closed wire left to sweep along. The sweep reads only the rim's outer
+            # wire, so it stays independent of the pocket and the dividers.
+            lip_clearance = 0.0
+            if params.stacking_lip:
+                self._add_stacking_lip(build, top_z)
+                lip_clearance = build.part.bounding_box().max.Z - top_z + STACKING_LIP_CUT_MARGIN_MM
+
             if params.cutouts_enabled:
                 # Cut the side handle slots straight through both walls perpendicular to X (and any
                 # dividers), sketched once on a YZ-oriented plane at the inner floor and extruded
@@ -427,6 +516,7 @@ class KitchenBin(BasePartObject):
                         cutout_arc_start=params.cutout_arc_start_mm,
                         cutout_arc_end=params.cutout_arc_end_mm,
                         cutout_radius=params.cutout_radius_mm,
+                        lip_clearance_height=lip_clearance,
                     )
                 extrude(
                     to_extrude=side_sketch.sketch.faces(),
@@ -436,6 +526,18 @@ class KitchenBin(BasePartObject):
                 )
 
         super().__init__(build.part, rotation, align, mode)
+
+    @staticmethod
+    def _add_stacking_lip(build: BuildPart, top_z: float) -> None:
+        """Sweep the Gridfinity stacking lip along the bin's outer top rim.
+
+        The rim is picked by area rather than by taking any face at the top Z: with dividers present the
+        divider tops sit at the same height, and sweeping a lip along one of those would be wrong.
+        """
+        rim_faces = [f for f in build.faces() if abs(f.center().Z - top_z) < 1e-6]
+        rim_face = max(rim_faces, key=lambda f: f.area)
+        with Locations((0, 0, top_z)):
+            StackingLip().create(rim_face.outer_wire())
 
     def _add_interior(self, params: BinParameters, floor_z: float, top_z: float) -> None:
         """Hook for subclasses to add interior structure before the cutout. No-op for a plain bin."""

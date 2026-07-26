@@ -97,6 +97,40 @@ def test_cli_no_cutouts_flag_disables_cutouts(monkeypatch: pytest.MonkeyPatch, t
     assert result["params"].cutouts_enabled is False
 
 
+@pytest.mark.scenario("stacking-lip", "Add a lip to a plain bin")
+def test_cli_stacking_lip_flag_on_plain_bin(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """--stacking-lip enables the lip, and omitting it leaves the lip off."""
+    result = _capture_cli(monkeypatch, ["--stacking-lip", "--output", str(tmp_path / "lip.stl")])
+    assert result["exit_code"] == 0
+    assert result["kind"] == "kitchen"
+    assert result["params"].stacking_lip is True
+
+    without = _capture_cli(monkeypatch, ["--output", str(tmp_path / "plain.stl")])
+    assert without["params"].stacking_lip is False
+
+
+@pytest.mark.scenario("stacking-lip", "Add a lip to a bin with dividers")
+def test_cli_stacking_lip_flag_on_divided_bin(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """--stacking-lip applies to a CutleryBin too."""
+    result = _capture_cli(
+        monkeypatch, ["--divisions", "3", "--stacking-lip", "--output", str(tmp_path / "cut_lip.stl")]
+    )
+    assert result["kind"] == "cutlery"
+    assert result["params"].stacking_lip is True
+
+
+@pytest.mark.scenario("stacking-lip", "Add a lip to a preset bin")
+def test_cli_stacking_lip_flag_overrides_preset(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """--stacking-lip layers on top of a preset through the existing override mechanism."""
+    result = _capture_cli(
+        monkeypatch, ["--preset", "chop-board", "--stacking-lip", "--output", str(tmp_path / "chop_lip.stl")]
+    )
+    assert result["exit_code"] == 0
+    assert result["params"].stacking_lip is True
+    # The preset's own values are untouched by the override.
+    assert result["params"].pocket_length_mm == pytest.approx(220.0)
+
+
 @pytest.mark.scenario("gridfinity-utensil-bin", "Cutout floor reaches past the grid line")
 def test_cli_cutout_offset_units_single_value_applies_to_both_ends(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
