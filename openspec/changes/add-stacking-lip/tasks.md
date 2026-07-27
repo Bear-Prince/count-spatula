@@ -75,4 +75,5 @@
       the lip's termination above the rim fillet's tangent point slices cleanly (per design Risks)
 - [x] 7.4 Sync the delta spec into `openspec/specs/` (done alongside the tests: the traceability guard
       rejects markers naming scenarios that are still only in the delta)
-- [ ] 7.5 Archive the change once UAT passes
+- [x] 7.5 Archive the change once UAT passes (UAT confirmed in a slicer; archived with `--skip-specs`
+      because the delta was already synced into `openspec/specs/` alongside the tests)
