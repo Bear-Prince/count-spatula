@@ -148,6 +148,8 @@ on top bears on the intact rim segments, which is most of the rim (about 75% of 
 chop-board preset). The lip ends in a clean vertical face at the slot's widest point rather than
 following the rim fillet's curve down into the opening.
 
+![Where the stacking lip runs on a bin with side cutouts](docs/images/stacking-lip.svg)
+
 The lip reaches 2.6 mm inward from the outer wall face, so on the default 2 mm walls it overhangs the
 pocket mouth slightly — normal for Gridfinity bins. A wall too thin to seat the lip at all is rejected
 with an actionable error.

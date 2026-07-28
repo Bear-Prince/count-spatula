@@ -1,0 +1,65 @@
+<svg viewBox="0 0 860 370" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Where the stacking lip runs on a bin with side cutouts</title>
+<desc>Two views of a chop-board bin carrying a stacking lip. Seen from above, the lip runs continuously
+around both ends of the bin and along the uncut walls, but is absent across each 106.2 mm handle slot,
+leaving roughly 75 percent of the rim perimeter carrying lip. Seen from the side, at one end of a slot,
+the lip sits on top of the wall and stops in a clean vertical face exactly where the slot is widest,
+rather than following the rim fillet's curve down into the opening. The lip adds 4.12 mm of height above
+the wall top.</desc>
+<style>
+  text { font-family: system-ui, -apple-system, sans-serif; }
+  .h1 { font-size: 19px; font-weight: 600; fill: var(--foreground, #1f2328); }
+  .ptitle { font-size: 16px; font-weight: 600; fill: var(--foreground, #1f2328); }
+  .lbl-sm { font-size: 12.5px; fill: var(--muted-foreground, #6b7280); }
+  .lbl-c { font-size: 12.5px; fill: var(--muted-foreground, #6b7280); text-anchor: middle; }
+  .lbl-l { font-size: 12.5px; fill: var(--muted-foreground, #6b7280); }
+  .lbl-dim { font-size: 13px; font-weight: 600; fill: var(--foreground, #1f2328); }
+  .lbl-lip { font-size: 12.5px; font-weight: 600; fill: #7d430f; text-anchor: middle; }
+  .outline { fill: none; stroke: var(--muted-foreground, #6b7280); stroke-width: 1; opacity: 0.45; }
+  .lipline { fill: none; stroke: #d98324; stroke-width: 5; stroke-linecap: round; }
+  .gap { stroke: var(--muted-foreground, #6b7280); stroke-width: 1.5; stroke-dasharray: 4 4; }
+  .dim { stroke: var(--muted-foreground, #6b7280); stroke-width: 1; }
+  .tickh { stroke: var(--muted-foreground, #6b7280); stroke-width: 1.4; }
+  .wall { fill: var(--muted, #d3d7dd); stroke: var(--foreground, #57606a); stroke-width: 1.6; }
+  .lip { fill: #e0953f; stroke: #8a4b12; stroke-width: 1.6; }
+  .ref { stroke: var(--muted-foreground, #6b7280); stroke-width: 1; stroke-dasharray: 5 4; }
+  .tick { stroke: var(--foreground, #57606a); stroke-width: 1.8; }
+  .caption { font-size: 13px; fill: var(--muted-foreground, #6b7280); }
+  @media (prefers-color-scheme: dark) {
+    .h1, .ptitle, .lbl-dim { fill: #e8eaed; }
+    .lbl-sm, .lbl-c, .lbl-l, .caption { fill: #94a0ac; }
+    .outline, .gap, .dim, .tickh, .ref { stroke: #94a0ac; }
+    .wall { fill: #3d444e; stroke: #9aa4b0; }
+    .tick { stroke: #c8d0d8; }
+    .lbl-lip { fill: #f0b168; }
+  }
+</style>
+<text class="h1" x="30" y="36">Where the stacking lip runs on a bin with side cutouts</text>
+<text class="caption" x="30" y="58">A chop-board bin with --stacking-lip. The lip is cut through wherever a handle slot passes, which is correct, not a defect.</text>
+<rect class="outline" x="78.0" y="118.0" width="144.05" height="216.29" rx="3.23"/>
+<path class="lipline" d="M 222.05 180.48 L 222.05 121.22 A 3.225 3.225 0 0 1 218.82 118.0 L 81.22 118.0 A 3.225 3.225 0 0 1 78.0 121.22 L 78.0 180.48"/>
+<path class="lipline" d="M 222.05 271.81 L 222.05 331.06 A 3.225 3.225 0 0 0 218.82 334.29 L 81.22 334.29 A 3.225 3.225 0 0 0 78.0 331.06 L 78.0 271.81"/>
+<line class="gap" x1="222.05" y1="180.48" x2="222.05" y2="271.81"/>
+<line class="gap" x1="78.0" y1="180.48" x2="78.0" y2="271.81"/>
+<line class="dim" x1="150.03" y1="180.48" x2="150.03" y2="271.81"/>
+<line class="tickh" x1="143.14" y1="180.48" x2="156.91" y2="180.48"/>
+<line class="tickh" x1="143.14" y1="271.81" x2="156.91" y2="271.81"/>
+<text class="lbl-l" x="158.03" y="223.14">slot</text>
+<text class="lbl-l" x="158.03" y="238.14">106.2 mm</text>
+<text class="lbl-lip" x="150.03" y="138.0">lip runs here</text>
+<text class="lbl-sm" x="234.05" y="230.14">no lip across</text>
+<text class="lbl-sm" x="234.05" y="245.14">the handle slot</text>
+<text class="ptitle" x="78" y="78">Seen from above</text>
+<text class="lbl-sm" x="78" y="96">about 75% of the rim keeps its lip</text>
+<path class="wall" d="M 500.0 322.0 L 500.0 319.0 L 500.0 316.0 L 500.0 313.0 L 500.0 310.0 L 500.0 307.0 L 500.0 304.0 L 500.0 301.0 L 500.0 298.0 L 500.0 295.0 L 500.0 292.0 L 500.0 289.0 L 500.0 286.0 L 500.0 283.0 L 500.0 280.0 L 500.0 277.0 L 500.0 274.0 L 500.0 271.0 L 500.0 268.0 L 500.0 265.0 L 500.0 262.0 L 500.0 259.0 L 500.0 256.0 L 500.0 253.0 L 500.0 250.0 L 500.0 247.0 L 500.0 244.0 L 500.0 241.0 L 500.0 238.0 L 500.0 235.0 L 500.0 232.0 L 500.0 229.0 L 500.0 226.0 L 500.0 223.0 L 500.0 220.0 L 500.0 217.0 L 500.0 214.0 L 500.11 211.0 L 500.37 208.0 L 500.78 205.0 L 501.34 202.0 L 502.07 199.0 L 502.97 196.0 L 504.03 193.0 L 505.29 190.0 L 506.74 187.0 L 508.41 184.0 L 510.31 181.0 L 512.48 178.0 L 514.95 175.0 L 517.78 172.0 L 521.04 169.0 L 524.86 166.0 L 529.43 163.0 L 535.19 160.0 L 543.3 157.0 L 560.6 154.03 L 674.0 154.0 L 674.0 322.0 Z"/>
+<path class="lip" d="M 560.6 154.0 L 560.6 129.3 L 674.0 129.3 L 674.0 154.0 Z"/>
+<line class="ref" x1="454.0" y1="154.0" x2="674.0" y2="154.0"/>
+<text class="lbl-sm" x="454.0" y="168.0">wall top</text>
+<line class="tick" x1="560.6" y1="144.0" x2="560.6" y2="164.0"/>
+<text class="lbl-dim" x="552.6" y="139.0" text-anchor="end">lip stops here</text>
+<text class="lbl-lip" x="666.0" y="145.65" text-anchor="end">lip 4.12 mm</text>
+<text class="lbl-sm" x="470.0" y="340.0">&#8592; into the slot</text>
+<text class="lbl-sm" x="674.0" y="340.0" text-anchor="end">bin end &#8594;</text>
+<text class="ptitle" x="470" y="78">Seen from the side</text>
+<text class="lbl-sm" x="470" y="96">the lip ends where the slot is widest</text>
+</svg>
