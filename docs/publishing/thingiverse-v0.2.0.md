@@ -30,19 +30,21 @@ self-centring tapered slot that grips spines from 2–3 mm without rattling and 
 floating clear of the plastic.
 
 **The block is the only part you need.** It drops into a standard Gridfinity baseplate like any
-other bin. The blades sit down in the slots — their edges seat roughly 5–9 mm below the block's top
-face, depending on how thick the spine is — and the handles simply rest on the baseplate at the ends.
-Nothing goes under them.
+other bin, and it does all the holding on its own: each slot grips its blade along the full length of
+the block, so the knife is carried by the blade alone. The handle hangs clear at one end, and the run
+of blade projecting from the other end counterbalances it. Nothing sits under the handles.
 
 Sized by default for seven similarly-lengthed kitchen knives (handles up to 26 mm wide, 2–3 mm
 spines) on a 3×2 Gridfinity footprint (125.5 × 83.5 mm) — it prints flat in one piece, no splitting
 needed. If your knives differ, the generator's `--knife-count`, `--handle-width-mm`, and
 `--handle-gap-mm` flags retune the whole layout.
 
-**If a knife rocks, prop its handle up.** A knife with a heavy or high-set handle — a metal-handled
-carving knife, say — can pull its own blade and rock in the slot. The fix is a small riser bin under
-just that handle. The right height depends on the individual knife, so shim the handle with folded
-card until the knife sits still, measure, and print to suit. Two of mine wanted 40 mm:
+**Blades that taper to a point may need a hand.** A straight blade of even depth — a bread knife, a
+flat carving knife — is gripped along the block's whole length and sits rock steady. A blade that
+tapers towards its tip only engages the slot over a short run, because it drops away from the grip as
+it narrows. With less of the blade held and a heavy handle out on one end, the knife can tip. The fix
+is a small riser under that handle. The right height depends on the individual knife, so shim the
+handle with folded card until it sits still, measure, and print to suit. Two of mine wanted 40 mm:
 
 ```text
 uv run python main.py --grid-x 1 --grid-y 2 --height-mm 40 --no-cutouts
@@ -97,7 +99,7 @@ prints flat in one piece.
 
 Adds the knife blade block: a Gridfinity module that stores kitchen knives by their blades instead
 of their handles, alternating head-to-toe through a single block of tapered self-centring slots
-(STL + 3MF attached). Drops into a standard baseplate; handles rest on the baseplate at each end, so
+(STL + 3MF attached). Drops into a standard baseplate and carries each knife by the blade alone, so
 the block is the only part needed. Default sized for seven similarly-lengthed knives (2–3 mm spines,
 handles up to 26 mm); override with `--knife-count`, `--handle-width-mm`, `--handle-gap-mm` for a
 different set.
