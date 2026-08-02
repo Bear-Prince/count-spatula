@@ -10,7 +10,7 @@ TBD - created by archiving change unify-chop-bin-as-preset. Update Purpose after
 
 The system SHALL provide named presets, each producing a fully-populated, valid set of bin parameters, so
 common bins can be generated without specifying every dimension. The system SHALL ship a `chop-board`
-preset: a `KitchenBin` reproducing the chopping-board bin — an explicit 220 mm × 160 mm pocket with a
+preset: a `KitchenBin` reproducing the chopping-board bin - an explicit 220 mm × 160 mm pocket with a
 35 mm corner radius and side cutouts enabled, on the established chop grid and height. The `chop-board`
 preset SHALL set its cutout offset to two grid units at each end so its floor is grid-aligned and the bin can
 be split cleanly on its ±42 mm internal grid lines. A preset MAY mark its side cutouts as required; disabling

@@ -20,6 +20,7 @@ from build123d.mesher import Mesher
 from build123d.topology import Shape
 
 from cutlery_bin import BinParameters, create_cutlery_bin, create_kitchen_bin, resolve_preset
+from knife_block import KnifeBlockParameters, create_knife_blade_block
 
 ASSETS_DIR = Path(__file__).parent / "docs" / "assets"
 GIF_PATH = ASSETS_DIR / "models.gif"
@@ -32,7 +33,7 @@ GIF_DELAY_CENTISECONDS = 75
 
 
 def render_manifest() -> list[tuple[str, Shape]]:
-    """Build the example bin set: the UAT.md cases plus a wave-divider cutlery bin."""
+    """Build the example model set: the UAT.md bin cases, a wave-divider bin, and the knife block."""
     return [
         ("kitchen_bin", create_kitchen_bin(BinParameters())),
         ("chop_board", create_kitchen_bin(resolve_preset("chop-board"))),
@@ -42,6 +43,7 @@ def render_manifest() -> list[tuple[str, Shape]]:
         )),
         ("solid_bin_2x4", create_kitchen_bin(BinParameters(cutouts_enabled=False))),
         ("solid_bin_3x3", create_kitchen_bin(BinParameters(grid_x=3, grid_y=3, cutouts_enabled=False))),
+        ("knife_block", create_knife_blade_block(KnifeBlockParameters())),
     ]
 
 

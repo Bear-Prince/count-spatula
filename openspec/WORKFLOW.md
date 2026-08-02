@@ -2,7 +2,7 @@
 
 Practical, use-case-driven notes for working with OpenSpec in this repository. The upstream documentation explains
 why OpenSpec exists but is thin on "what do I actually do when X happens", so this file grinds out the common
-situations — especially the awkward ones, like correcting work that turned out wrong.
+situations - especially the awkward ones, like correcting work that turned out wrong.
 
 ## Mental model
 
@@ -33,14 +33,14 @@ new change. Archiving is one-way and terminal.
 A **delta** is the structured, machine-readable diff a change makes to the specs. It lives in the change at
 `changes/<name>/specs/<capability>/spec.md` and uses one of four operations as a heading:
 
-- `## ADDED Requirements` — new requirements.
-- `## MODIFIED Requirements` — changed behaviour. You must paste the **entire** updated requirement, not just the
+- `## ADDED Requirements` - new requirements.
+- `## MODIFIED Requirements` - changed behaviour. You must paste the **entire** updated requirement, not just the
   edited line, so the merge is unambiguous.
-- `## REMOVED Requirements` — deprecated behaviour. Requires a **Reason** and a **Migration** note.
-- `## RENAMED Requirements` — name changes only, using `FROM:` / `TO:`.
+- `## REMOVED Requirements` - deprecated behaviour. Requires a **Reason** and a **Migration** note.
+- `## RENAMED Requirements` - name changes only, using `FROM:` / `TO:`.
 
 Every requirement needs at least one `#### Scenario:` block. When a change is archived, OpenSpec applies its deltas
-to `openspec/specs/` — that is how a proposal's spec edits become the new living truth.
+to `openspec/specs/` - that is how a proposal's spec edits become the new living truth.
 
 The `proposal.md` narrative is **not** a delta. Editing the proposal is refining a draft; a delta is a concrete edit
 to the published spec. Nothing is locked until archive.
@@ -82,7 +82,7 @@ code. The original change is untouched in `archive/`; the history honestly shows
 
 ## Changing scope mid-flight
 
-Before archive, an in-flight change is fully editable — rewrite the proposal, adjust the design, rework the deltas.
+Before archive, an in-flight change is fully editable - rewrite the proposal, adjust the design, rework the deltas.
 The only friction is renaming a change for clarity (see conventions below).
 
 ## Keeping a backlog item
