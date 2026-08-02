@@ -64,7 +64,7 @@ def test_default_seven_lanes_span_three_gridfinity_units() -> None:
     assert params.grid_x == 3
 
 
-@pytest.mark.scenario("knife-blade-block", "Deck height is exposed for blank matching")
+@pytest.mark.scenario("knife-blade-block", "Top-face height is exposed for layout")
 def test_deck_height_is_taper_plus_relief_plus_min_deck() -> None:
     """The exposed deck height sums the taper, relief, and minimum solid deck below it."""
     params = KnifeBlockParameters()
