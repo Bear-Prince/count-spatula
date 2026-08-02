@@ -108,11 +108,12 @@ class KnifeBlockParameters:
 
     @property
     def deck_height_mm(self) -> float:
-        """Return the block's effective height above the Gridfinity floor.
+        """Return the height of the block's top face above the Gridfinity floor.
 
-        This is the one interface between the generated block and the user-supplied
-        ``gridfinity_build123d`` blanks that fill the handle zones: a blank of this height keeps the
-        knives resting level. See design.md Decision 4.
+        This is a layout figure, not a height to match anything to. A blade seats *below* this face
+        by an amount that depends on its spine thickness, and the knife is carried by the blade alone
+        -- nothing goes under the handle. Where a knife does need a riser (see the README), that
+        riser's height is a property of the knife, not of the block.
         """
         return self.slot_total_depth_mm + self.min_deck_thickness_mm
 

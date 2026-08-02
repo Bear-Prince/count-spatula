@@ -187,16 +187,27 @@ similarly-lengthed kitchen knives with 2–3 mm spines - it produces a 3×2 Grid
 across seven 18 mm lanes). Override the layout with `--knife-count`, `--handle-width-mm`, and
 `--handle-gap-mm`; `--grid-x`/`--grid-y` set the block's own footprint in this mode.
 
-**Only the block is generated.** The handle-rest zones at each end are generic - fill them with
-plain [`gridfinity_build123d`](https://github.com/Ruudjhuu/gridfinity_build123d) blanks rather than
-anything this project produces. The one interface between the block and those blanks is the block's
-own height: use a blank of that height under the handles so the knives rest level. Query it directly:
+**Only the block is generated, and it is the only part needed.** Each slot grips its blade along the
+full length of the block, so the knife is carried by the blade alone: the handle hangs clear at one
+end and the run of blade projecting past the other counterbalances it. Nothing goes under the
+handles.
+
+A blade seats *below* the block's top face, by 5.14 mm for a 3 mm spine down to 8.57 mm for a 2 mm
+one, so the block's own height is not a height to match anything to. It is available as a layout
+figure:
 
 ```python
 from knife_block import KnifeBlockParameters
 
-KnifeBlockParameters().deck_height_mm  # 18.0 mm by default
+KnifeBlockParameters().deck_height_mm  # 18.0 mm, the top face
 ```
+
+**If a knife tips, it will be one whose blade tapers to a point.** A straight, even-depth blade (a
+bread knife, a flat carving knife) is gripped along the block's whole length and sits steady. A blade
+that narrows towards the tip drops away from the slot as it goes, so only a short run is held, and a
+heavy handle out on the lever arm can tip it. Support that handle with a small riser -- an ordinary
+bin works: `--grid-x 1 --grid-y 2 --height-mm 40 --no-cutouts`. The height depends on the knife, so
+shim the handle with folded card until it sits still, then measure.
 
 `--drawer-height-mm`, `--max-blade-depth-mm`, and `--drawer-clearance-mm` control a drawer-fit
 check (in the same non-blocking, warn-and-still-export spirit as the print-bed check): it warns

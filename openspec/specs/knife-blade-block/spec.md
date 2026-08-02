@@ -5,15 +5,15 @@
 Generate a parametric Gridfinity module that stores kitchen knives lying flat, held by their blades in a
 single block of tapered, self-centring slots, arranged alternating head-to-toe -- so a full knife set
 packs into a fraction of the space a handle-held rack would need, and each knife lifts straight out.
-
 ## Requirements
-
 ### Requirement: Knife blade block holds knives by the blade
 
 The system SHALL generate a `KnifeBladeBlock`: a Gridfinity module that stores kitchen knives lying flat,
-edge-down, held by their blades. Each blade passes through a slot in a single block; the block locates the
-blades laterally while the knives rest along their length. The block SHALL sit on a standard
-`gridfinity_build123d.BaseEqual` Gridfinity base, matching the footprint conventions of the existing bins.
+edge-down, held by their blades. Each blade passes through a slot in a single block, which grips it along
+the full length of the block and carries the whole knife: the handle hangs clear at one end and the run of
+blade projecting past the other counterbalances it. Nothing supports the handle. The block SHALL sit on a
+standard `gridfinity_build123d.BaseEqual` Gridfinity base, matching the footprint conventions of the
+existing bins.
 
 #### Scenario: Generate a block from valid parameters
 
@@ -77,24 +77,6 @@ float clear of the slot apex (a relief so the edge never rests on the block).
 - **WHEN** a blade is seated in a slot
 - **THEN** the cutting edge floats above the slot apex and is not supported on the block material
 
-### Requirement: Generate only the block; compose handle zones with blanks
-
-The system SHALL generate only the central block module. The handle-rest zones at each end are generic and
-are explicitly out of scope; they SHALL be filled by the user with `gridfinity_build123d` blanks. The block
-SHALL expose an effective deck/rest height so a matching blank height keeps the knives resting level (or with
-the handle slightly raised).
-
-#### Scenario: Only the block is produced
-
-- **WHEN** a `KnifeBladeBlock` is generated
-- **THEN** the output contains the slotted block and its base only - no handle-zone deck is generated
-
-#### Scenario: Deck height is exposed for blank matching
-
-- **WHEN** a block is generated
-- **THEN** its effective deck/rest height is available as a value, so a blank of that height can be placed
-  under the handles
-
 ### Requirement: Block prints without splitting
 
 The default block footprint SHALL be small enough to print flat, in one piece, on a typical print bed; the
@@ -155,3 +137,25 @@ rotated).
 
 - **WHEN** the occupied height is within the drawer's internal height
 - **THEN** the check returns no warning
+
+### Requirement: Generate only the block; handles are unsupported
+
+The system SHALL generate only the central block module. The handle zones at each end are out of scope and
+require no part at all: the knife is carried entirely by the blade in its slot. A blade seats below the
+block's top face by an amount that depends on its spine thickness, so the block's top height does NOT
+define a height at which a handle should be supported. Where an individual knife does need a riser under
+its handle - because a blade that tapers to a point engages the slot over a shorter run and can be tipped
+by a heavy handle - that riser's height is a property of that knife and is found by measurement, not
+derived from the block. The block SHALL expose the height of its top face as a value for layout purposes.
+
+#### Scenario: Only the block is produced
+
+- **WHEN** a `KnifeBladeBlock` is generated
+- **THEN** the output contains the slotted block and its base only - no handle-zone deck is generated
+
+#### Scenario: Top-face height is exposed for layout
+
+- **WHEN** a block is generated
+- **THEN** the height of its top face above the Gridfinity floor is available as a value, without implying
+  a matching height for anything placed under the handles
+
