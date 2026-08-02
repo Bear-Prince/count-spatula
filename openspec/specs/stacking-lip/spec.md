@@ -12,7 +12,7 @@ explicitly requested.
 
 The system SHALL accept a `stacking_lip` parameter on `BinParameters`, surfaced as a `--stacking-lip` CLI
 flag, which adds a Gridfinity-standard stacking lip to the bin's outer top rim. The parameter SHALL default
-to disabled, and SHALL apply to every bin type — plain `KitchenBin`, `CutleryBin`, and any preset.
+to disabled, and SHALL apply to every bin type: plain `KitchenBin`, `CutleryBin`, and any preset.
 
 #### Scenario: Lip is absent by default
 
@@ -106,7 +106,7 @@ bounding box, so that the height added by the lip counts toward the height limit
 The lip profile extends 2.6 mm inward from the outer wall face. The system SHALL reject a bin whose wall is
 too thin for the lip to be seated on, reporting which parameter is at fault. A wall thinner than the lip's
 reach but still sufficient to seat it SHALL be permitted, since the resulting inward overhang narrows the
-pocket mouth without making the geometry invalid — this matches standard Gridfinity bins.
+pocket mouth without making the geometry invalid, matching standard Gridfinity bins.
 
 #### Scenario: Default wall thickness is accepted
 

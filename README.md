@@ -128,8 +128,8 @@ open cutout, not the solid wall - regardless of the chosen radius.
 ### Stacking lip
 
 `--stacking-lip` adds a Gridfinity-standard stacking lip to the outer top rim, so another bin's base
-mates with it and the bins stack. It is **off by default**, and applies to any bin — plain, divided, or
-a preset:
+mates with it and the bins stack. It is **off by default**, and applies to any bin: plain, divided, or
+a preset.
 
 ```bash
 uv run python main.py --stacking-lip
@@ -137,13 +137,13 @@ uv run python main.py --preset chop-board --stacking-lip
 ```
 
 **The lip is added after the bin's wall height is built, so it makes the model taller.** A lipped bin's
-total height is the requested `--height-mm` (or `--height-units`) **plus** about 4.12 mm — not equal to
+total height is the requested `--height-mm` (or `--height-units`) **plus** about 4.12 mm, not equal to
 it. The height you ask for is the wall height above the inner floor either way; the lip sits on top of
 that. This matters when sizing a bin to a drawer or to the print bed, and the print-bed check measures
 the real bounding box, so a lipped bin may warn where the same bin without a lip does not.
 
 On a bin with side cutouts the lip is necessarily discontinuous: the handle slot is cut through the lip
-as well as the wall, so the lip stops at each slot and resumes after it. That is correct — a bin stacked
+as well as the wall, so the lip stops at each slot and resumes after it. That is correct: a bin stacked
 on top bears on the intact rim segments, which is most of the rim (about 75% of the perimeter on the
 chop-board preset). The lip ends in a clean vertical face at the slot's widest point rather than
 following the rim fillet's curve down into the opening.
@@ -151,7 +151,7 @@ following the rim fillet's curve down into the opening.
 ![Where the stacking lip runs on a bin with side cutouts](docs/images/stacking-lip.svg)
 
 The lip reaches 2.6 mm inward from the outer wall face, so on the default 2 mm walls it overhangs the
-pocket mouth slightly — normal for Gridfinity bins. A wall too thin to seat the lip at all is rejected
+pocket mouth slightly, which is normal for Gridfinity bins. A wall too thin to seat the lip at all is rejected
 with an actionable error.
 
 ### Other options
