@@ -5,7 +5,7 @@
 
 ## Example models
 
-![Cycling renders of the example bin set](docs/assets/models.gif)
+![Cycling renders of the example model set: kitchen, cutlery and chopping-board bins, and the knife blade block](docs/assets/models.gif)
 
 Renders of the models above are CC BY-SA 4.0 (see [Licensing](#licensing)); the generator code itself is
 Apache 2.0. Regenerate them with `uv run python render_models.py` (requires `openscad` and `imagemagick`
