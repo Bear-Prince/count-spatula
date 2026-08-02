@@ -12,7 +12,7 @@ permissive license and every derived model carries the attribution it requires.
 The generator code SHALL be licensed under the Apache License 2.0. A `LICENSE`
 file containing the full Apache 2.0 text SHALL exist at the repository root, and
 the project's packaging metadata SHALL declare the same license. Generic
-parametric logic — code that produces shapes from supplied dimensions — SHALL
+parametric logic - code that produces shapes from supplied dimensions - SHALL
 remain solely under Apache 2.0 and MUST NOT embed a third party's protected
 creative expression.
 
@@ -103,7 +103,7 @@ this project.
 The project SHALL retain the required notices of its redistributed dependencies.
 A `NOTICE` file SHALL preserve the MIT copyright and permission notices for
 `gridfinity_build123d` (MIT) and Gridfinity (MIT), and the Apache 2.0 notices for
-`build123d` — including stating changes and preserving any upstream NOTICE file
+`build123d` - including stating changes and preserving any upstream NOTICE file
 when that code is redistributed.
 
 #### Scenario: Dependency notices present

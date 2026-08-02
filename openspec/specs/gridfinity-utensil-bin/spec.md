@@ -48,8 +48,8 @@ or as a freeform millimetre value, but not both simultaneously.
 
 The system MUST validate all parameters before geometry construction and reject values outside supported
 printable ranges with actionable error messages, covering grid size, height, the pocket dimensions, any
-enabled side cutouts, and (for a `CutleryBin`) the divider count, thickness, profile, and — for the `wave`
-profile — the wave amplitude. For the `wave` profile the amplitude plus half the divider thickness MUST stay
+enabled side cutouts, and (for a `CutleryBin`) the divider count, thickness, profile, and - for the `wave`
+profile - the wave amplitude. For the `wave` profile the amplitude plus half the divider thickness MUST stay
 within the per-column spacing with clearance, so a divider cannot collide with its neighbour or the pocket
 wall. For side cutouts, each of `cutout_offset_start_units` and `cutout_offset_end_units` MUST be at least 1;
 their combined gap in whole grid units (`grid_y − cutout_offset_start_units − cutout_offset_end_units`) MUST
@@ -107,7 +107,7 @@ effective bin height, so the rim fillet has room to complete within the wall.
 
 A `KitchenBin` SHALL have a single interior rounded pocket. By default the pocket is derived from a uniform
 `wall_thickness_mm` (default 2 mm), producing equal walls. The pocket MAY instead be given explicit length,
-width, and corner radius, independent of any uniform wall thickness, so the end and side walls may differ —
+width, and corner radius, independent of any uniform wall thickness, so the end and side walls may differ -
 as the `chop-board` preset does.
 
 #### Scenario: Default pocket derived from wall thickness
@@ -168,8 +168,8 @@ the previous straight-divider behaviour.
 ### Requirement: Optional side cutouts
 
 A bin SHALL provide a `cutouts_enabled` option, defaulting to enabled, that cuts a full-height slot through
-the two opposing side walls perpendicular to the X axis — and through any `CutleryBin` dividers, which run
-parallel to those walls — from the inner floor to the top of the walls, leaving the Gridfinity base intact.
+the two opposing side walls perpendicular to the X axis - and through any `CutleryBin` dividers, which run
+parallel to those walls - from the inner floor to the top of the walls, leaving the Gridfinity base intact.
 When disabled, the side walls and dividers are solid.
 
 The cutout profile's floor-to-wall corner SHALL be sharp (unfilleted) on each end; only the wall-to-rim
@@ -178,8 +178,8 @@ corner, where the wall flares out to its widest point, SHALL be rounded, with on
 whole number of Gridfinity units of solid wall (`cutout_offset_start_units` and `cutout_offset_end_units`,
 each defaulting to 1), so bins of different lengths can align their cutouts at a shared end. The reserved
 solid wall at each end SHALL be a fixed 1 mm (`CUTOUT_GRID_ALLOWANCE_MM`) shorter than that whole number of
-grid units, so the sharp floor edge reaches 1 mm past that end's corresponding internal grid line — the line
-itself sits just inside the open cutout, not the solid wall — matching a Gridfinity split convention where
+grid units, so the sharp floor edge reaches 1 mm past that end's corresponding internal grid line - the line
+itself sits just inside the open cutout, not the solid wall - matching a Gridfinity split convention where
 the reserved unit is 1 mm undersized relative to the nominal grid pitch. Because the floor is unfilleted, its
 position does not depend on `cutout_radius_mm`.
 
@@ -243,7 +243,7 @@ position does not depend on `cutout_radius_mm`.
 ### Requirement: GridFinity dimensional conformance
 
 The generated bin body SHALL conform to the GridFinity specification's outer dimensions. The outer footprint
-SHALL be `N×42 mm − 0.5 mm` on each axis — the standard 0.5 mm total clearance per axis — so the bin matches the
+SHALL be `N×42 mm − 0.5 mm` on each axis - the standard 0.5 mm total clearance per axis - so the bin matches the
 Gridfinity base it is built on and seats in a baseplate without touching its neighbours. The outer corner radius
 SHALL be 3.75 mm (the 4 mm baseplate radius less the 0.25 mm clearance per side).
 

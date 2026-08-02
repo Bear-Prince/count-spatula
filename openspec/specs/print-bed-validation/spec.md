@@ -8,7 +8,7 @@ footprint would exceed those dimensions, without blocking generation or export.
 ### Requirement: Print-bed size configuration
 
 The system SHALL provide a default print volume of 220 mm width × 220 mm depth × 240 mm height, and SHALL accept
-CLI overrides for each axis — `--bed-x`, `--bed-y`, `--bed-z`. All print-volume dimensions are expressed in
+CLI overrides for each axis - `--bed-x`, `--bed-y`, `--bed-z`. All print-volume dimensions are expressed in
 millimetres; the system SHALL NOT apply any unit conversion to them.
 
 #### Scenario: Default print volume applied
@@ -24,8 +24,8 @@ millimetres; the system SHALL NOT apply any unit conversion to them.
 ### Requirement: Warn when bin footprint exceeds print bed
 
 The system SHALL measure the generated model's **actual bounding box** and emit a warning to stderr when any
-dimension exceeds the configured build volume — width against bed X, depth against bed Y, and height against the
-maximum print height (Z) — and MUST still generate and export the output file. The model SHALL be evaluated in
+dimension exceeds the configured build volume - width against bed X, depth against bed Y, and height against the
+maximum print height (Z) - and MUST still generate and export the output file. The model SHALL be evaluated in
 its as-generated (printed) orientation; the system SHALL NOT rotate or reorient the model to make it fit, since
 doing so could introduce overhang or infill problems.
 

@@ -8,7 +8,7 @@ TBD - created by archiving change add-readme-model-renders. Update Purpose after
 The system SHALL provide a render script that builds each model in the example set using the existing
 factories, and renders each one to a PNG in `docs/assets/` using headless OpenSCAD at a fixed camera
 position, so the images are reproducible. The example set SHALL cover the project's representative
-models — the `UAT.md` bin cases, a wave-divider cutlery bin, and the knife blade block — and is not
+models - the `UAT.md` bin cases, a wave-divider cutlery bin, and the knife blade block - and is not
 limited to bins.
 
 #### Scenario: Render the set to PNGs

@@ -2,8 +2,8 @@
 
 This project produces two kinds of work under two different licenses:
 
-- **Generator code** — Apache License 2.0 (see [LICENSE](LICENSE)).
-- **Generated model files** (STL/STEP/3MF) — Creative Commons
+- **Generator code** - Apache License 2.0 (see [LICENSE](LICENSE)).
+- **Generated model files** (STL/STEP/3MF) - Creative Commons
   Attribution-ShareAlike 4.0 International
   ([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); full text in
   [LICENSES/CC-BY-SA-4.0.txt](LICENSES/CC-BY-SA-4.0.txt)).
@@ -15,14 +15,14 @@ requirement and may be revisited per bin.
 
 ## Design lineage
 
-Even where credit is not strictly legally required, we credit the whole chain —
+Even where credit is not strictly legally required, we credit the whole chain -
 it is how remix culture stays healthy:
 
 ```text
-Zack Freedman — Gridfinity (MIT)
-  └─ atmmilani — "Gridfinity Blanks" (Thingiverse, CC BY 4.0)   [The Next Layer's source]
-       └─ The Next Layer (JonathanLevi) — "Gridfinity Complete Kitchen Collection" (CC BY-SA 4.0)
-            └─ count-spatula — stackable + original additions; derived bins are CC BY-SA 4.0
+Zack Freedman - Gridfinity (MIT)
+  └─ atmmilani - "Gridfinity Blanks" (Thingiverse, CC BY 4.0)   [The Next Layer's source]
+       └─ The Next Layer (JonathanLevi) - "Gridfinity Complete Kitchen Collection" (CC BY-SA 4.0)
+            └─ count-spatula - stackable + original additions; derived bins are CC BY-SA 4.0
 ```
 
 The chain is license-compatible: CC BY material (atmmilani) can validly be
@@ -47,7 +47,7 @@ Dependency notices are retained in [NOTICE](NOTICE).
 ## Attribution for derived models
 
 Any bin that reproduces The Next Layer's distinctive cut-out profiles or design
-is **derived** and must ship with the attribution block below — both alongside
+is **derived** and must ship with the attribution block below - both alongside
 the model file and in the project README. Per CC BY-SA 4.0, the block must:
 credit the author, link the source, link the license, state that changes were
 made, preserve prior notices, and mark our version as also CC BY-SA 4.0. Because
@@ -66,14 +66,14 @@ that persists downstream, the upstream author must be credited too.
 > [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 > **This version** is likewise licensed under CC BY-SA 4.0.
 
-**Note:** As of this writing the repository contains **no** derived presets — the
+**Note:** As of this writing the repository contains **no** derived presets - the
 only preset (`chop-board`) is an original IKEA chopping-board bin. The block above
 is the template to ship with the first derived bin.
 
 ## Distribution constraint
 
 Derived (CC BY-SA 4.0) models may only be published to platforms that preserve
-the CC BY-SA 4.0 license — for example **Printables** and **Thingiverse**. They
+the CC BY-SA 4.0 license - for example **Printables** and **Thingiverse**. They
 **must not** be published under any exclusive or otherwise ShareAlike-incompatible
 platform license (for example MakerWorld's exclusive Standard Digital File
 License); "ShareAlike" and "exclusive" are incompatible. Any future upload or

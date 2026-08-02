@@ -47,7 +47,7 @@ re-verified.
 
 - Command: `uv run python main.py --preset chop-board --no-cutouts`
 - Expect: no file written; exit code 2; message that side cutouts cannot be disabled for the preset (the
-  board would be trapped — the footgun).
+  board would be trapped - the footgun).
 - Last passed: 2026-06-22 (also covered by tests)
 
 ### UAT-7: cutout too large for the bin is rejected
@@ -61,7 +61,7 @@ re-verified.
 
 - Command: `uv run python main.py --preset chop-board --output build/chop.stl`
 - Expect: the model still exports (exit 0), but a warning is printed to stderr that the model **depth**
-  (251.5 mm) exceeds the print volume depth (220 mm) — because the chop bin is 6 units long. Overriding with a
+  (251.5 mm) exceeds the print volume depth (220 mm) - because the chop bin is 6 units long. Overriding with a
   larger `--bed-y` (≥ 252) clears the warning; a tight `--bed-y 100` warns on any bin.
 - Last passed: 2026-06-22 (also covered by tests)
 

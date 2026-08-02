@@ -25,7 +25,7 @@ Provenance decides the license. Do not blanket-apply one license to all bins.
   and no extra restrictions/tech measures may be added.
 - **Original bins** (e.g. the IKEA chopping-board bin, and any bin whose geometry comes
   from our own measurements and our own profiles): **our choice.** Not required to be
-  BY-SA. May be BY-SA anyway for simplicity, but that is a choice, not an obligation —
+  BY-SA. May be BY-SA anyway for simplicity, but that is a choice, not an obligation -
   flag it as such, don't silently force it.
 
 ## Keeping the Apache code clean
@@ -55,7 +55,7 @@ expression. Raw functional dimensions (a slot sized to fit a real teaspoon) are 
 and aren't copyrightable; the protected part is creative expression (their distinctive
 finger-slide profiles, stylized thick walls, modular end-cap look).
 
-So a bin is genuinely independent — and free to carry our own license — when its
+So a bin is genuinely independent - and free to carry our own license - when its
 dimensions come from our own measurements AND its profiles/styling/stacking design are
 our own, leaving only the *idea* of Gridfinity kitchen bins + functional facts in common.
 
@@ -81,22 +81,22 @@ required (not just courteous), even though The Next Layer is our direct source.
 
 ## Lineage (credit the chain)
 
-Even where not legally required, credit the chain — it's how remix culture stays healthy:
+Even where not legally required, credit the chain - it's how remix culture stays healthy:
 
 ```text
 Zack Freedman (Gridfinity, MIT)
-  └─ atmmilani — "Gridfinity Blanks" (Thingiverse, CC BY 4.0)   [The Next Layer's source]
-       └─ The Next Layer — "Gridfinity Complete Kitchen Collection" (CC BY-SA 4.0)
+  └─ atmmilani - "Gridfinity Blanks" (Thingiverse, CC BY 4.0)   [The Next Layer's source]
+       └─ The Next Layer - "Gridfinity Complete Kitchen Collection" (CC BY-SA 4.0)
             └─ THIS PROJECT (stackable + original additions; derived bins are BY-SA)
 ```
 
 ## Dependency & source licenses (verified)
 
-- Gridfinity (Zack Freedman) — **MIT**
-- `gridfinity_build123d` (Ruudjhuu) — **MIT**
-- `build123d` (gumyr) — **Apache 2.0**
-- The Next Layer "Gridfinity Complete Kitchen Collection" — **CC BY-SA 4.0**
-- atmmilani "Gridfinity Blanks" (Thingiverse, thing:5758082) — **CC BY 4.0** (upstream
+- Gridfinity (Zack Freedman) - **MIT**
+- `gridfinity_build123d` (Ruudjhuu) - **MIT**
+- `build123d` (gumyr) - **Apache 2.0**
+- The Next Layer "Gridfinity Complete Kitchen Collection" - **CC BY-SA 4.0**
+- atmmilani "Gridfinity Blanks" (Thingiverse, thing:5758082) - **CC BY 4.0** (upstream
   source The Next Layer remixed)
 
 Chain is confirmed license-compatible: atmmilani (CC BY) → The Next Layer (CC BY-SA) →
@@ -113,7 +113,7 @@ license, state changes, and preserve any NOTICE file.
 Derived (BY-SA) models may only be posted to platforms that **preserve CC BY-SA 4.0**.
 Printables and Thingiverse are fine. **Do not** publish BY-SA models under any exclusive
 or restrictive platform license (e.g. MakerWorld's exclusive Standard Digital File
-License) — "ShareAlike" and "exclusive" are incompatible. Any future upload/automation
+License) - "ShareAlike" and "exclusive" are incompatible. Any future upload/automation
 tooling must filter out platforms that won't keep the BY-SA license, and should respect
 each site's Terms of Service regarding automated/bulk uploads.
 

@@ -1,7 +1,7 @@
 # Contributing
 
 How work flows through this repository: the relationship between work sessions, OpenSpec changes, Git branches, and
-pull requests. For the OpenSpec-internal mechanics — deltas, archiving, abandoning or superseding a change — see
+pull requests. For the OpenSpec-internal mechanics - deltas, archiving, abandoning or superseding a change - see
 [openspec/WORKFLOW.md](openspec/WORKFLOW.md).
 
 ## The four moving parts
@@ -13,7 +13,7 @@ pull requests. For the OpenSpec-internal mechanics — deltas, archiving, abando
 | Git branch | One line of development. | It is merged or deleted | One branch is one PR |
 | Pull request | One reviewable unit landing on `main`. | It is merged | Usually one per change |
 
-The trap is assuming all four line up one-to-one. Three of them nearly do — but the **session does not**.
+The trap is assuming all four line up one-to-one. Three of them nearly do - but the **session does not**.
 
 ## The session is a workspace, not a unit of work
 
@@ -32,8 +32,8 @@ For most work, the simple model is correct: **one change, one branch, several co
 
 1. Create or pick the OpenSpec change under `openspec/changes/<name>/`.
 2. Branch named after it: `feature/<name>`, `fix/<name>`, `docs/<name>`, and so on.
-3. Commit as you go — proposal, design, and specs first, then implementation, ticking `tasks.md`.
-4. Run UAT — build the real artifact and confirm behaviour.
+3. Commit as you go - proposal, design, and specs first, then implementation, ticking `tasks.md`.
+4. Run UAT - build the real artifact and confirm behaviour.
 5. Archive the change as the final step so the spec deltas fold into `openspec/specs/` on the same branch.
 6. Open one PR. Review, then merge to `main`.
 
@@ -41,7 +41,7 @@ One change in, one PR out. This is the common case and the right default.
 
 ## The exception: a proposal-only PR
 
-Sometimes a single change is best landed in **two** PRs — a planning PR first, then an implementation PR later:
+Sometimes a single change is best landed in **two** PRs - a planning PR first, then an implementation PR later:
 
 - The planning PR contains only `proposal.md` (and maybe `design.md`). There is no code, so there is nothing to
   UAT; reviewers assess the *plan*, not behaviour.
@@ -52,7 +52,7 @@ Reach for the split when:
 - The change is large or architectural and you want the design reviewed before sinking time into building it.
 - You want concurrent contributors to see the plan on `main` now, so their work can account for it.
 - You are capturing a backlog item you do not intend to build yet. A proposal-only change will fail
-  `openspec validate` with "no deltas found" — that is expected; see [openspec/WORKFLOW.md](openspec/WORKFLOW.md).
+  `openspec validate` with "no deltas found" - that is expected; see [openspec/WORKFLOW.md](openspec/WORKFLOW.md).
 
 If none of those apply, prefer the single all-in-one PR.
 

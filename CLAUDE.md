@@ -44,41 +44,41 @@ Pre-commit hooks run `ruff check`, `markdownlint`, and `yamllint` on commit; `py
 
 ## Testing conventions
 
-- Tests are linked to OpenSpec scenarios with `@pytest.mark.scenario("<capability>", "<scenario name>")`. The guard in `tests/test_spec_traceability.py` fails when a spec scenario has no claiming test (unless allowlisted in `UNTESTED_SCENARIOS` with a reason) or a marker names a scenario that does not exist — so syncing specs and adding tests must move together.
+- Tests are linked to OpenSpec scenarios with `@pytest.mark.scenario("<capability>", "<scenario name>")`. The guard in `tests/test_spec_traceability.py` fails when a spec scenario has no claiming test (unless allowlisted in `UNTESTED_SCENARIOS` with a reason) or a marker names a scenario that does not exist - so syncing specs and adding tests must move together.
 - Tests that build real geometry are auto-marked `slow` (see `tests/conftest.py`); use `-m "not slow"` for a fast loop.
 
 ## Architecture
 
 **`cutlery_bin.py`** is the source of truth for all geometry.
 
-- `BinParameters` — a `@dataclass(slots=True)` holding every configurable dimension. Call `.validate()` before building; it accumulates all errors and raises a single `ValueError`. Pocket dimensions default to a uniform-wall-thickness derivation but can be set explicitly (e.g. for the chop-board preset).
-- `SideCutoutProfile(BaseSketchObject)` — the side cutout profile (a mirrored fillet polyline). Used internally by `KitchenBin`.
-- `KitchenBin(BasePartObject)` — a Gridfinity bin with a single explicitly-sized rounded pocket and optional full-height side cutouts. Builds on top of `gridfinity_build123d.BaseEqual` for the Gridfinity base.
-- `CutleryBin(KitchenBin)` — adds straight, single-axis dividers that split the pocket into equal columns (`params.divisions >= 2`); the side cutout runs through the dividers. Generic equal-compartment grids are out of scope here — use `gridfinity_build123d` directly for those.
-- `create_kitchen_bin(params)` / `create_cutlery_bin(params)` — thin factories; the public entry points from tests and `main.py`.
-- `PRESETS` / `resolve_preset(name)` / `preset_requires_cutouts(name)` — named parameter presets (e.g. `"chop-board"`, which reproduces the original chopping-board bin and forbids disabling its cutouts).
-- `check_print_bed(model_x_mm, model_y_mm, model_z_mm, bed_x_mm, bed_y_mm, bed_z_mm)` — checks the model's
+- `BinParameters` - a `@dataclass(slots=True)` holding every configurable dimension. Call `.validate()` before building; it accumulates all errors and raises a single `ValueError`. Pocket dimensions default to a uniform-wall-thickness derivation but can be set explicitly (e.g. for the chop-board preset).
+- `SideCutoutProfile(BaseSketchObject)` - the side cutout profile (a mirrored fillet polyline). Used internally by `KitchenBin`.
+- `KitchenBin(BasePartObject)` - a Gridfinity bin with a single explicitly-sized rounded pocket and optional full-height side cutouts. Builds on top of `gridfinity_build123d.BaseEqual` for the Gridfinity base.
+- `CutleryBin(KitchenBin)` - adds straight, single-axis dividers that split the pocket into equal columns (`params.divisions >= 2`); the side cutout runs through the dividers. Generic equal-compartment grids are out of scope here - use `gridfinity_build123d` directly for those.
+- `create_kitchen_bin(params)` / `create_cutlery_bin(params)` - thin factories; the public entry points from tests and `main.py`.
+- `PRESETS` / `resolve_preset(name)` / `preset_requires_cutouts(name)` - named parameter presets (e.g. `"chop-board"`, which reproduces the original chopping-board bin and forbids disabling its cutouts).
+- `check_print_bed(model_x_mm, model_y_mm, model_z_mm, bed_x_mm, bed_y_mm, bed_z_mm)` - checks the model's
   actual bounding box (all mm) against the print-bed volume and returns warning strings for each axis that exceeds
   its limit. The model is evaluated as-generated (no rotation).
 
 **`main.py`** is the CLI layer. It parses args into a `BinParameters` (optionally seeded from `--preset`), calls `export_bin()` to write STL or 3MF (selected by `--format` or the output extension), and returns process exit codes. `--divisions >= 2` builds a `CutleryBin`; otherwise a `KitchenBin`. Tests mock the bin factories and export to avoid real geometry builds.
 
-**`gridfinity_build123d`** is pulled over HTTPS from our mirror fork (`https://github.com/Bear-Prince/gridfinity_build123d`, upstream `Ruudjhuu/gridfinity_build123d`), pinned to a specific commit in `pyproject.toml`. The fork exists only so builds survive upstream disappearing — never diverge it; to pick up upstream changes, sync the fork and bump the pin deliberately (geometry can change, so UAT applies). Requires Linux x86_64.
+**`gridfinity_build123d`** is pulled over HTTPS from our mirror fork (`https://github.com/Bear-Prince/gridfinity_build123d`, upstream `Ruudjhuu/gridfinity_build123d`), pinned to a specific commit in `pyproject.toml`. The fork exists only so builds survive upstream disappearing - never diverge it; to pick up upstream changes, sync the fork and bump the pin deliberately (geometry can change, so UAT applies). Requires Linux x86_64.
 
 ## OpenSpec change workflow
 
 Changes are proposed, designed, and tracked via OpenSpec (local dev dependency, run via `pnpm`). Active changes live under `openspec/changes/`. The workflow skills `/opsx:explore`, `/opsx:propose`, `/opsx:apply`, `/opsx:sync`, and `/opsx:archive` drive the lifecycle.
 
-See [openspec/WORKFLOW.md](openspec/WORKFLOW.md) for practical recipes — how to raise an issue, abandon or supersede a change, walk back shipped behaviour, and the tool's known rough edges. See [CONTRIBUTING.md](CONTRIBUTING.md) for how sessions, changes, branches, and PRs map together (including when to use a proposal-only PR).
+See [openspec/WORKFLOW.md](openspec/WORKFLOW.md) for practical recipes - how to raise an issue, abandon or supersede a change, walk back shipped behaviour, and the tool's known rough edges. See [CONTRIBUTING.md](CONTRIBUTING.md) for how sessions, changes, branches, and PRs map together (including when to use a proposal-only PR).
 
 Branch conventions: `feature/<slug>`, `fix/<slug>`, `docs/<slug>`, `refactor/<slug>`, `chore/<slug>`. Open a PR after branch work is complete; do not merge without user review. Any PR with AI-generated code must disclose the coding agent and model used.
 
 **Reviewing a change's artifacts:** the markdown files under `openspec/changes/<name>/` (`proposal.md`,
-`design.md`, `specs/**/*.md`, `tasks.md`) remain the source of truth — `openspec validate`, the
+`design.md`, `specs/**/*.md`, `tasks.md`) remain the source of truth - `openspec validate`, the
 traceability guard, and archiving all operate on them directly, so they always get written regardless.
 When asked to publish, present, or otherwise make a change's artifacts easier to review, render them as a
 single designed Artifact page (via Claude Code's `Artifact` tool) restructuring the same content into a
-scannable review packet — not on every propose/apply, only on request.
+scannable review packet - not on every propose/apply, only on request.
 
 ## Style conventions
 
@@ -86,7 +86,7 @@ scannable review packet — not on every propose/apply, only on request.
 - YAML/JSON: 2 spaces per indent level.
 - Comments must be grammatically complete sentences.
 - Use `pathlib.Path` instead of `os.path`.
-- `notebooks/` are prototyping only — excluded from ruff and not part of the supported interface.
+- `notebooks/` are prototyping only - excluded from ruff and not part of the supported interface.
 
 ## Licensing & attribution
 

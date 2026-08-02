@@ -87,7 +87,7 @@ the handle slightly raised).
 #### Scenario: Only the block is produced
 
 - **WHEN** a `KnifeBladeBlock` is generated
-- **THEN** the output contains the slotted block and its base only — no handle-zone deck is generated
+- **THEN** the output contains the slotted block and its base only - no handle-zone deck is generated
 
 #### Scenario: Deck height is exposed for blank matching
 
