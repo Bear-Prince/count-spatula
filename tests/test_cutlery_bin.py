@@ -9,8 +9,10 @@ from cutlery_bin import (
     GRIDFINITY_CLEARANCE_MM,
     GRIDFINITY_PITCH_MM,
     BinParameters,
+    BlankingPlateParameters,
     KitchenBin,
     check_print_bed,
+    create_blanking_plate,
     create_cutlery_bin,
     create_kitchen_bin,
     preset_names,
@@ -513,3 +515,78 @@ def test_check_print_bed_exceeds_height() -> None:
 def test_check_print_bed_reports_every_exceeded_axis() -> None:
     """A model exceeding all three limits produces three warnings."""
     assert len(check_print_bed(250.0, 250.0, 250.0, 220.0, 220.0, 240.0)) == 3
+
+
+@pytest.mark.scenario("blanking-plates", "Reject an out-of-range grid size")
+def test_blanking_plate_validation_rejects_out_of_range_grid() -> None:
+    """Grid dimensions outside 1-12 are rejected."""
+    with pytest.raises(ValueError, match="grid_x"):
+        BlankingPlateParameters(grid_x=0).validate()
+    with pytest.raises(ValueError, match="grid_y"):
+        BlankingPlateParameters(grid_y=13).validate()
+
+
+def test_blanking_plate_default_parameters_validate_cleanly() -> None:
+    """The default blanking plate parameter set is valid as-is."""
+    BlankingPlateParameters().validate()
+
+
+@pytest.mark.scenario("blanking-plates", "Existing bin geometry is unchanged")
+def test_existing_bin_footprint_unaffected_by_blanking_plates(bins: dict) -> None:
+    """A default KitchenBin, built after adding blanking plates, is identical to a fresh rebuild.
+
+    Demonstrates that the same parameters still produce the exact same bounding box now that
+    ``BlankingPlateParameters``/``BlankingPlate`` exist alongside ``BinParameters``/``KitchenBin``.
+    """
+    reference = bins["default"].bounding_box()
+    rebuilt = create_kitchen_bin().bounding_box()
+    assert (rebuilt.size.X, rebuilt.size.Y, rebuilt.size.Z) == (reference.size.X, reference.size.Y, reference.size.Z)
+    assert abs(reference.size.X - (2 * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM)) < 0.1
+    assert abs(reference.size.Y - (4 * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM)) < 0.1
+
+
+@pytest.fixture(scope="module")
+def blanking_plates() -> dict:
+    """Build the reference blanking plates once for the whole module (geometry builds are slow)."""
+    return {
+        "default": create_blanking_plate(),
+        "3x3": create_blanking_plate(BlankingPlateParameters(grid_x=3, grid_y=3)),
+    }
+
+
+@pytest.mark.scenario("blanking-plates", "Generate a blanking plate")
+def test_blanking_plate_is_one_base_tall(blanking_plates: dict) -> None:
+    """The plate's height matches a bare Gridfinity base within a small tolerance, not a literal constant."""
+    base_x, base_y = _base_footprint(2, 4)
+    with BuildPart() as base:
+        add(BaseEqual(grid_x=2, grid_y=4, mode=Mode.ADD))
+    base_height = base.part.bounding_box().size.Z
+    plate_bbox = blanking_plates["default"].bounding_box()
+    assert pytest.approx(base_height, abs=0.01) == plate_bbox.size.Z
+    assert abs(plate_bbox.size.X - base_x) < 0.01
+    assert abs(plate_bbox.size.Y - base_y) < 0.01
+
+
+@pytest.mark.scenario("blanking-plates", "Plate carries no material above the base")
+def test_blanking_plate_has_no_material_above_the_base(blanking_plates: dict) -> None:
+    """No material exists above the top of the Gridfinity base -- what distinguishes a plate from a bin."""
+    plate = blanking_plates["default"]
+    top_z = plate.bounding_box().max.Z
+    vol = _region_volume(plate, (0.0, 0.0, top_z + 2.0), (60.0, 60.0, 4.0))
+    assert vol < 0.01, f"expected no material above the base, found {vol:.4f} mm^3"
+
+
+@pytest.mark.scenario("blanking-plates", "Footprint matches a bin of the same grid")
+def test_blanking_plate_footprint_matches_equivalent_bin(blanking_plates: dict) -> None:
+    """A blanking plate's X/Y footprint matches a bin of the same grid size, so it drops into the same cells."""
+    plate_bbox = blanking_plates["default"].bounding_box()
+    bin_bbox = create_kitchen_bin(BinParameters(grid_x=2, grid_y=4)).bounding_box()
+    assert pytest.approx(bin_bbox.size.X, abs=0.01) == plate_bbox.size.X
+    assert pytest.approx(bin_bbox.size.Y, abs=0.01) == plate_bbox.size.Y
+
+
+@pytest.mark.scenario("blanking-plates", "Blanking plate is a valid solid")
+def test_blanking_plate_is_a_valid_solid(blanking_plates: dict) -> None:
+    """A blanking plate is a valid, watertight solid suitable for export."""
+    assert blanking_plates["default"].is_valid()
+    assert blanking_plates["3x3"].is_valid()

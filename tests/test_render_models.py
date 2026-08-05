@@ -26,13 +26,16 @@ def test_render_manifest_covers_the_uat_set_and_wave_divider(
     monkeypatch.setattr(render_models, "create_kitchen_bin", record("kitchen"))
     monkeypatch.setattr(render_models, "create_cutlery_bin", record("cutlery"))
     monkeypatch.setattr(render_models, "create_knife_blade_block", record("knife_block"))
+    monkeypatch.setattr(render_models, "create_blanking_plate", record("blanking_plate"))
     monkeypatch.setattr(render_models, "resolve_preset", lambda _name: BinParameters(pocket_length_mm=220))
 
     manifest = render_models.render_manifest()
     names = [name for name, _ in manifest]
 
     assert len(names) == len(set(names)), "manifest entry names must be unique"
-    assert {"kitchen_bin", "chop_board", "cutlery_bin", "wave_divider_bin", "knife_block"} <= set(names)
+    assert {
+        "kitchen_bin", "chop_board", "cutlery_bin", "wave_divider_bin", "knife_block", "blanking_plate"
+    } <= set(names)
 
     wave_call = next(params for kind, params in calls if kind == "cutlery" and params.divider_profile == "wave")
     assert wave_call.divider_amplitude_mm == 4.0

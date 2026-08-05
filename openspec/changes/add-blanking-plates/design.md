@@ -133,7 +133,5 @@ No migration. The feature is additive and reachable only through a new flag. Rol
 
 ## Open Questions
 
-- Should the plate be added to the rendered example set in `render_models.py` and the README gallery? It is
-  visually dull, being a flat plate, and the gallery exists to show what the project makes. Leaving it out
-  keeps the gallery interesting; putting it in makes the set complete. Deferred to implementation, since it
-  is a one-line change either way and does not affect the geometry.
+Resolved: the plate joins the rendered example set in `render_models.py` and the README gallery, so the set
+stays complete. README renders are regenerated as part of task 6.4.
