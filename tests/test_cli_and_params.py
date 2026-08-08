@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 import main
-from cutlery_bin import BinParameters
+from cutlery_bin import BinParameters, BlankingPlateParameters
 from knife_block import KnifeBlockParameters
 
 
@@ -47,6 +47,14 @@ def test_default_output_path_for_knife_block() -> None:
     params = KnifeBlockParameters(knife_count=7, grid_x=3, grid_y=2)
     output = main.default_output_path(params)
     assert output.name == "knife_block_7knives_3x2.stl"
+
+
+@pytest.mark.scenario("blanking-plates", "Deterministic default filename")
+def test_default_output_path_for_blanking_plate() -> None:
+    """A BlankingPlateParameters set should produce a blanking_plate filename naming its grid."""
+    params = BlankingPlateParameters(grid_x=3, grid_y=5)
+    output = main.default_output_path(params)
+    assert output.name == "blanking_plate_3x5.stl"
 
 
 def _capture_cli(monkeypatch: pytest.MonkeyPatch, argv: list[str], part: object | None = None) -> dict:
@@ -377,3 +385,113 @@ def test_cli_regular_bin_defaults_are_unchanged(monkeypatch: pytest.MonkeyPatch,
     assert result["exit_code"] == 0
     assert result["kind"] == "kitchen"
     assert isinstance(result["params"], BinParameters)
+
+
+def _capture_blanking_plate_cli(monkeypatch: pytest.MonkeyPatch, argv: list[str], part: object | None = None) -> dict:
+    """Run the CLI with blanking-plate geometry/export mocked, returning what was built."""
+    captured: dict = {}
+    stub = part if part is not None else _stub_part(x=83.5, y=167.5, z=7.804)
+
+    def fake_blanking_plate(params: BlankingPlateParameters) -> object:
+        captured["params"] = params
+        return stub
+
+    monkeypatch.setattr(main, "create_blanking_plate", fake_blanking_plate)
+    monkeypatch.setattr(main, "export_bin", lambda _part, path: (path.touch(), path)[1])
+
+    captured["exit_code"] = main.main(argv)
+    return captured
+
+
+@pytest.mark.scenario("blanking-plates", "Generate a blanking plate")
+def test_cli_blanking_plate_flag_builds_a_plate(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """--blanking-plate builds a BlankingPlateParameters set with the default 2x4 grid."""
+    result = _capture_blanking_plate_cli(
+        monkeypatch, ["--blanking-plate", "--output", str(tmp_path / "plate.stl")]
+    )
+    assert result["exit_code"] == 0
+    assert isinstance(result["params"], BlankingPlateParameters)
+    assert (result["params"].grid_x, result["params"].grid_y) == (2, 4)
+
+
+def test_cli_blanking_plate_reuses_grid_flags(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """--grid-x/--grid-y apply to the plate's own footprint in --blanking-plate mode."""
+    result = _capture_blanking_plate_cli(
+        monkeypatch,
+        ["--blanking-plate", "--grid-x", "3", "--grid-y", "5", "--output", str(tmp_path / "plate.stl")],
+    )
+    assert (result["params"].grid_x, result["params"].grid_y) == (3, 5)
+
+
+def test_cli_blanking_plate_default_output_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Omitting --output in --blanking-plate mode names the file after the plate, not a bin."""
+    monkeypatch.chdir(tmp_path)
+    result = _capture_blanking_plate_cli(monkeypatch, ["--blanking-plate"])
+    assert result["exit_code"] == 0
+    assert any(p.name == "blanking_plate_2x4.stl" for p in tmp_path.iterdir())
+
+
+@pytest.mark.scenario("blanking-plates", "Bin-only flags leave the plate unchanged")
+def test_cli_blanking_plate_ignores_bin_only_flags(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Bin-only flags (pocket, cutout, divider) passed alongside --blanking-plate do not alter the plate."""
+    baseline = _capture_blanking_plate_cli(
+        monkeypatch, ["--blanking-plate", "--output", str(tmp_path / "a.stl")]
+    )
+    with_bin_flags = _capture_blanking_plate_cli(
+        monkeypatch,
+        [
+            "--blanking-plate",
+            "--pocket-length-mm", "50",
+            "--no-cutouts",
+            "--divisions", "3",
+            "--output", str(tmp_path / "b.stl"),
+        ],
+    )
+    assert with_bin_flags["exit_code"] == 0
+    assert with_bin_flags["params"] == baseline["params"]
+
+
+@pytest.mark.scenario("blanking-plates", "Height flags do not resize the plate")
+def test_cli_blanking_plate_ignores_height_flags(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """A height flag passed alongside --blanking-plate does not resize the plate (no height field exists)."""
+    baseline = _capture_blanking_plate_cli(
+        monkeypatch, ["--blanking-plate", "--output", str(tmp_path / "a.stl")]
+    )
+    with_height = _capture_blanking_plate_cli(
+        monkeypatch,
+        ["--blanking-plate", "--height-mm", "100", "--output", str(tmp_path / "b.stl")],
+    )
+    assert with_height["exit_code"] == 0
+    assert with_height["params"] == baseline["params"]
+
+
+@pytest.mark.scenario("blanking-plates", "Export a blanking plate")
+def test_cli_blanking_plate_exports_through_the_standard_path(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A blanking plate exports through the unchanged export_bin() path, for both STL and 3MF."""
+    stl_result = _capture_blanking_plate_cli(
+        monkeypatch, ["--blanking-plate", "--output", str(tmp_path / "plate.stl")]
+    )
+    threemf_result = _capture_blanking_plate_cli(
+        monkeypatch, ["--blanking-plate", "--output", str(tmp_path / "plate.3mf")]
+    )
+    assert stl_result["exit_code"] == 0
+    assert threemf_result["exit_code"] == 0
+    assert (tmp_path / "plate.stl").exists()
+    assert (tmp_path / "plate.3mf").exists()
+
+
+@pytest.mark.scenario("blanking-plates", "Print-bed check applies to a blanking plate")
+def test_cli_blanking_plate_print_bed_check_uses_actual_bounding_box(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """The print-bed check measures the plate's actual bounding box, warning when it is oversized."""
+    result = _capture_blanking_plate_cli(
+        monkeypatch,
+        ["--blanking-plate", "--output", str(tmp_path / "big.stl")],
+        part=_stub_part(x=250.0, y=100.0, z=7.804),
+    )
+    err = capsys.readouterr().err
+    assert result["exit_code"] == 0
+    assert "exceeds the print volume width" in err

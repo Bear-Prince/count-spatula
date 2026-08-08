@@ -219,6 +219,33 @@ override `--max-blade-depth-mm` for anything taller, such as a cleaver (not part
 This is an original design (our own measurements and profiles), CC BY-SA 4.0 like the project's
 other original bins.
 
+## Blanking plates
+
+`--blanking-plate` builds a `BlankingPlate` instead of a bin: a thin, wall-less Gridfinity base used on
+its own to cap leftover grid in a drawer lined with a baseplate. Three similarly named things mean
+different objects here:
+
+- **baseplate** - the grid that lines the drawer.
+- **base** - a bin's own footed bottom, the part that mates with the baseplate.
+- **blanking plate** - a base used on its own, with no bin built on top of it, to fill an otherwise
+  empty baseplate cell.
+
+```bash
+uv run python main.py --blanking-plate
+```
+
+![The default 2x4 blanking plate](docs/assets/blanking_plate.png)
+
+This render (like the example models above) is CC BY-SA 4.0 (see [Licensing](#licensing)). Regenerate it
+by running `render_models.py` (see [Example models](#example-models)); it is part of the standard
+manifest.
+
+`--grid-x`/`--grid-y` set the plate's own footprint, matching the same baseplate cells as a bin of that
+grid size. Bin-only options - pocket, cutout, divider and stacking-lip flags, and the height flags - do
+not apply to a plate; only `grid_x`/`grid_y` are read, so those flags are silently ignored rather than
+altering the plate. It exports and is checked against the print bed through the same paths as any other
+model.
+
 ## Licensing
 
 This project ships two kinds of work under two different licenses:

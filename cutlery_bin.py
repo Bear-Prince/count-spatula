@@ -521,6 +521,62 @@ def create_cutlery_bin(params: BinParameters | None = None) -> CutleryBin:
     return CutleryBin(params=params)
 
 
+@dataclass(slots=True)
+class BlankingPlateParameters:
+    """Input contract for a wall-less blanking plate: a Gridfinity base and nothing else.
+
+    Carries only ``grid_x`` and ``grid_y``; bin-specific fields (pocket, cutouts, dividers, height,
+    stacking lip) have no meaning for a plate and do not exist on this type -- see
+    openspec/changes/add-blanking-plates/design.md Decision 2.
+    """
+
+    grid_x: int = 2
+    grid_y: int = 4
+
+    def validate(self) -> None:
+        """Validate grid dimensions over the same supported range as bins."""
+        errors: list[str] = []
+        if not 1 <= self.grid_x <= 12:
+            errors.append("grid_x must be between 1 and 12")
+        if not 1 <= self.grid_y <= 12:
+            errors.append("grid_y must be between 1 and 12")
+        if errors:
+            raise ValueError("Invalid blanking plate parameters: " + "; ".join(errors))
+
+
+class BlankingPlate(BasePartObject):
+    """A wall-less Gridfinity base, used on its own to cap leftover baseplate grid.
+
+    Built from ``BaseEqual`` alone rather than a height-zero ``Bin``, so the part is exactly one
+    Gridfinity base tall with no reliance on a bin's height arithmetic happening to produce nothing
+    extra -- see openspec/changes/add-blanking-plates/design.md Decision 1.
+    """
+
+    def __init__(
+        self,
+        params: BlankingPlateParameters | None = None,
+        rotation: RotationLike = (0, 0, 0),
+        align: Align | tuple[Align, Align, Align] | None = None,
+        mode: Mode = Mode.ADD,
+    ) -> None:
+        """Construct the plate from validated parameters."""
+        if params is None:
+            params = BlankingPlateParameters()
+        params.validate()
+
+        with BuildPart() as build:
+            # This inner Mode.ADD is independent of the `mode` parameter, which controls how the
+            # finished plate combines into an enclosing build context (see super().__init__ below).
+            add(BaseEqual(grid_x=params.grid_x, grid_y=params.grid_y, mode=Mode.ADD))
+
+        super().__init__(build.part, rotation, align, mode)
+
+
+def create_blanking_plate(params: BlankingPlateParameters | None = None) -> BlankingPlate:
+    """Create a blanking plate (a wall-less Gridfinity base) from validated parameters."""
+    return BlankingPlate(params=params)
+
+
 def check_print_bed(
     model_x_mm: float,
     model_y_mm: float,

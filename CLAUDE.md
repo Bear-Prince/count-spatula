@@ -17,6 +17,9 @@ uv run python main.py --preset chop-board --output build/chop.stl
 # Build a cutlery bin (pocket split into equal columns) and export to 3MF
 uv run python main.py --grid-x 2 --grid-y 4 --divisions 3 --format 3mf
 
+# Build a blanking plate (wall-less, caps leftover baseplate grid) on a 3x3 footprint
+uv run python main.py --blanking-plate --grid-x 3 --grid-y 3
+
 # Run tests
 uv run pytest
 
@@ -56,12 +59,15 @@ Pre-commit hooks run `ruff check`, `markdownlint`, and `yamllint` on commit; `py
 - `KitchenBin(BasePartObject)` - a Gridfinity bin with a single explicitly-sized rounded pocket and optional full-height side cutouts. Builds on top of `gridfinity_build123d.BaseEqual` for the Gridfinity base.
 - `CutleryBin(KitchenBin)` - adds straight, single-axis dividers that split the pocket into equal columns (`params.divisions >= 2`); the side cutout runs through the dividers. Generic equal-compartment grids are out of scope here - use `gridfinity_build123d` directly for those.
 - `create_kitchen_bin(params)` / `create_cutlery_bin(params)` - thin factories; the public entry points from tests and `main.py`.
+- `BlankingPlateParameters` / `BlankingPlate(BasePartObject)` / `create_blanking_plate(params)` - a thin,
+  wall-less Gridfinity base (`grid_x`/`grid_y` only, no height/pocket/cutout/divider fields) used on its own
+  to cap leftover baseplate grid; built from `gridfinity_build123d.BaseEqual` alone, with no `Bin` wrapper.
 - `PRESETS` / `resolve_preset(name)` / `preset_requires_cutouts(name)` - named parameter presets (e.g. `"chop-board"`, which reproduces the original chopping-board bin and forbids disabling its cutouts).
 - `check_print_bed(model_x_mm, model_y_mm, model_z_mm, bed_x_mm, bed_y_mm, bed_z_mm)` - checks the model's
   actual bounding box (all mm) against the print-bed volume and returns warning strings for each axis that exceeds
   its limit. The model is evaluated as-generated (no rotation).
 
-**`main.py`** is the CLI layer. It parses args into a `BinParameters` (optionally seeded from `--preset`), calls `export_bin()` to write STL or 3MF (selected by `--format` or the output extension), and returns process exit codes. `--divisions >= 2` builds a `CutleryBin`; otherwise a `KitchenBin`. Tests mock the bin factories and export to avoid real geometry builds.
+**`main.py`** is the CLI layer. It parses args into a `BinParameters` (optionally seeded from `--preset`), calls `export_bin()` to write STL or 3MF (selected by `--format` or the output extension), and returns process exit codes. `--divisions >= 2` builds a `CutleryBin`; otherwise a `KitchenBin`. `--blanking-plate` builds a `BlankingPlate` instead, reusing `--grid-x`/`--grid-y` for the plate's own footprint and ignoring bin-only flags (pocket, cutout, divider, height). Tests mock the bin/plate factories and export to avoid real geometry builds.
 
 **`gridfinity_build123d`** is pulled over HTTPS from our mirror fork (`https://github.com/Bear-Prince/gridfinity_build123d`, upstream `Ruudjhuu/gridfinity_build123d`), pinned to a specific commit in `pyproject.toml`. The fork exists only so builds survive upstream disappearing - never diverge it; to pick up upstream changes, sync the fork and bump the pin deliberately (geometry can change, so UAT applies). Requires Linux x86_64.
 

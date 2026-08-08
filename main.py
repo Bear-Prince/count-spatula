@@ -10,7 +10,9 @@ from build123d.topology import Shape
 
 from cutlery_bin import (
     BinParameters,
+    BlankingPlateParameters,
     check_print_bed,
+    create_blanking_plate,
     create_cutlery_bin,
     create_kitchen_bin,
     preset_names,
@@ -114,6 +116,13 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Build a KnifeBladeBlock instead of a bin. --grid-x/--grid-y apply to the block's own "
         "footprint; bin-only flags (pocket, cutout, divider options) are ignored.",
+    )
+    parser.add_argument(
+        "--blanking-plate",
+        action="store_true",
+        help="Build a BlankingPlate instead of a bin: a thin, wall-less Gridfinity base used to cap "
+        "leftover baseplate grid. --grid-x/--grid-y apply to the plate's own footprint; bin-only "
+        "options and the height flags do not apply.",
     )
     parser.add_argument("--knife-count", type=int, default=None, help="Number of knife lanes.")
     parser.add_argument("--handle-width-mm", type=float, default=None, help="Widest supported knife handle.")
@@ -223,10 +232,26 @@ def create_knife_block_parameters(args: argparse.Namespace) -> KnifeBlockParamet
     return replace(KnifeBlockParameters(), **overrides)
 
 
-def default_output_path(params: BinParameters | KnifeBlockParameters, fmt: str = "stl") -> Path:
-    """Build a deterministic default output path for the generated bin or knife block."""
+def create_blanking_plate_parameters(args: argparse.Namespace) -> BlankingPlateParameters:
+    """Build BlankingPlateParameters from parsed CLI arguments.
+
+    Only grid_x/grid_y apply; bin-only flags and the height flags have no field on this type, so they
+    are ignored rather than silently altering the plate.
+    """
+    simple = {"grid_x": args.grid_x, "grid_y": args.grid_y}
+    overrides = {key: value for key, value in simple.items() if value is not None}
+    return replace(BlankingPlateParameters(), **overrides)
+
+
+def default_output_path(
+    params: BinParameters | KnifeBlockParameters | BlankingPlateParameters, fmt: str = "stl"
+) -> Path:
+    """Build a deterministic default output path for the generated bin, knife block, or blanking plate."""
     if isinstance(params, KnifeBlockParameters):
         file_name = f"knife_block_{params.knife_count}knives_{params.grid_x}x{params.grid_y}.{fmt}"
+        return Path.cwd() / file_name
+    if isinstance(params, BlankingPlateParameters):
+        file_name = f"blanking_plate_{params.grid_x}x{params.grid_y}.{fmt}"
         return Path.cwd() / file_name
     kind = "cutlery_bin" if params.divisions >= 2 else "kitchen_bin"
     height_token = f"{params.effective_height_mm:g}".replace(".", "p")
@@ -240,7 +265,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        params = create_knife_block_parameters(args) if args.knife_block else create_parameters(args)
+        if args.blanking_plate:
+            params = create_blanking_plate_parameters(args)
+        elif args.knife_block:
+            params = create_knife_block_parameters(args)
+        else:
+            params = create_parameters(args)
         params.validate()
         fmt = args.format if args.format is not None else "stl"
         if args.output is not None and args.format is not None:
@@ -255,7 +285,9 @@ def main(argv: list[str] | None = None) -> int:
         if not output_path.parent.exists():
             msg = f"Output directory does not exist: {output_path.parent}"
             raise FileNotFoundError(msg)
-        if args.knife_block:
+        if args.blanking_plate:
+            part = create_blanking_plate(params)
+        elif args.knife_block:
             part = create_knife_blade_block(params)
         else:
             part = create_cutlery_bin(params) if params.divisions >= 2 else create_kitchen_bin(params)
