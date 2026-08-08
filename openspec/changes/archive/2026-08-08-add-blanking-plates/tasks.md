@@ -53,8 +53,10 @@
 - [x] 6.1 Run `uv run ruff check .` and the full `uv run pytest --cov`
 - [x] 6.2 Confirm an existing bin regenerates byte for byte against a pre-change build, covering the AC that
       bin geometry is unchanged
-- [ ] 6.3 Export a blanking plate and send it to the user for UAT, checking it sits flush in a baseplate
-      alongside a printed bin
+- [x] 6.3 Export a blanking plate and send it to the user for UAT, checking it sits flush in a baseplate
+      alongside a printed bin. Confirmed: printed face down for finish, no rocking, sits flush next to a bin
 - [x] 6.4 If task 1.1 decided the plate joins the example set, regenerate the README renders with
       `xvfb-run -a uv run python render_models.py` and eyeball them, per WORKFLOW.md
-- [ ] 6.5 Sync and archive the change once UAT passes
+- [x] 6.5 Sync and archive the change once UAT passes. Delta spec was already synced at task 5.2, so the
+      spec was already identical to the living truth by archive time; archived with `--skip-specs` to avoid
+      re-applying an already-applied delta
