@@ -33,6 +33,44 @@ until those are written.
   that was never meant to be cut). Newly-created cut edges are plausibly fine to square, or leave rounded, as
   a documented choice — decide during design rather than assuming.
 
+## Library capability: `build123d` can slice, but that is probably not the mechanism to use
+
+Checked against the pinned `build123d` 0.9.0. It does have a first-class planar cut, so "slice the finished
+model" is a genuinely available implementation strategy:
+
+- `split(objects, bisect_by=<Plane|Face>, keep=Keep.TOP|BOTTOM|BOTH)`, plus `Keep.ALL`, `Keep.INSIDE` and
+  `Keep.OUTSIDE`. With `Keep.BOTH` it returns a single `Part` whose `.solids()` yields the separate pieces.
+- Verified on real geometry, not just a toy: a generated 7x3 blanking plate cut at `Plane.YZ.offset(x)` on a
+  whole-unit boundary produced two clean solids in ~1.6 s (against ~12.5 s to build the plate), with volume
+  conserved exactly. Fillets, stacking feet and all.
+
+**However, measurement suggests native re-generation is the better mechanism for grid-aligned splits.** The
+Gridfinity 0.5 mm clearance is applied once to the whole footprint, not per unit — a native `N`x3 plate
+measures `N*42 - 0.5` mm at every `N` tested (3, 4 and 7). So the two approaches do not agree:
+
+| Approach | 3-unit piece | 4-unit piece |
+| --- | --- | --- |
+| Generate natively as 3x3 and 4x3 | 125.5 mm | 167.5 mm |
+| Slice a 7x3 at the 3-unit boundary | 126.0 mm | 167.5 mm |
+
+The sliced piece inherits no clearance on its cut face, leaving it 0.5 mm oversized across three cells —
+enough to bind in a baseplate. Native generation gives each piece its own correct clearance and a properly
+finished edge, which also matches what the "Why" section above already observes: two ordinary invocations
+already produce the right parts today.
+
+Consequences for the design:
+
+- Prefer computing sub-footprints and generating each natively; treat `split()` as the fallback for cuts
+  that cannot land on a unit boundary (which the non-goal below currently excludes anyway).
+- If `split()` is ever used, the design must decide what happens to clearance on the cut face rather than
+  inheriting the 0.5 mm error silently.
+- `split()` remains the more plausible route for bins, whose walls and pockets have no meaning at a
+  sub-footprint level — but a naive cut leaves an open-ended pocket that would need re-walling, so this does
+  not by itself resolve the bins question raised above.
+- The live `knife-blade-block` requirement "Block prints without splitting" explicitly promises the block
+  needs none of this machinery; keep it that way, and note the `cleaver-block-variant` stub flags a deeper
+  channel that should be re-checked against a typical bed.
+
 ## Non-goals
 
 - Arbitrary, non-grid-aligned cut positions — the value of automation here is specifically deriving the grid-
