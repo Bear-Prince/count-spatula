@@ -25,48 +25,69 @@ until those are written.
   `<output>-part1.stl`, `<output>-part2.stl`, ...).
 - Splits should land on whole-grid-unit boundaries, consistent with how a manual slicer cut needs to for a
   clean result on Gridfinity's per-unit pitch.
-- Which product types this applies to: blanking plates today; bins and cutlery bins have walls and pockets
-  that a naive grid split would cut through, so they need their own consideration, or may be out of scope
-  for a first pass.
+- Which product types this applies to. Blanking plates can go either route (native sub-footprints or a
+  slice). The chop-board preset is a driving case rather than a deferrable one: at 251.50 mm in Y it exceeds
+  a 220 mm bed today, and native re-generation cannot express half of it (see the library-capability section
+  below), so it can only be served by slicing. Cutting through its walls and pocket is correct here, not a
+  defect, because the halves are glued back into one bin.
 - Interaction with `square-corner-support` (see that stub): pieces produced this way have genuinely new
   outer edges at the cut lines, which is a different situation from that stub's problem (squaring an edge
   that was never meant to be cut). Newly-created cut edges are plausibly fine to square, or leave rounded, as
   a documented choice — decide during design rather than assuming.
 
-## Library capability: `build123d` can slice, but that is probably not the mechanism to use
+## Library capability: `build123d` can slice, and slicing is the required mechanism for presets
 
-Checked against the pinned `build123d` 0.9.0. It does have a first-class planar cut, so "slice the finished
-model" is a genuinely available implementation strategy:
+Checked against the pinned `build123d` 0.9.0. It has a first-class planar cut:
 
 - `split(objects, bisect_by=<Plane|Face>, keep=Keep.TOP|BOTTOM|BOTH)`, plus `Keep.ALL`, `Keep.INSIDE` and
   `Keep.OUTSIDE`. With `Keep.BOTH` it returns a single `Part` whose `.solids()` yields the separate pieces.
-- Verified on real geometry, not just a toy: a generated 7x3 blanking plate cut at `Plane.YZ.offset(x)` on a
-  whole-unit boundary produced two clean solids in ~1.6 s (against ~12.5 s to build the plate), with volume
-  conserved exactly. Fillets, stacking feet and all.
+- Verified on real geometry, not a toy: a 7x3 blanking plate cut at `Plane.YZ.offset(x)` produced two clean
+  solids in ~1.6 s (against ~12.5 s to build the plate), volume conserved exactly, fillets and stacking feet
+  intact. A chop-board bin cut at `Plane.XZ` behaved the same.
 
-**However, measurement suggests native re-generation is the better mechanism for grid-aligned splits.** The
-Gridfinity 0.5 mm clearance is applied once to the whole footprint, not per unit — a native `N`x3 plate
-measures `N*42 - 0.5` mm at every `N` tested (3, 4 and 7). So the two approaches do not agree:
+**Native re-generation cannot serve the chop-board preset at all.** Its pocket is explicitly sized
+(`CHOP_POCKET_LENGTH = 220`, `CHOP_POCKET_WIDTH = 160`), so "half a chop-board bin" is not expressible as a
+`BinParameters` footprint — a natively-generated 4x3 bin would derive a different pocket entirely, and the
+220 mm pocket spans the join in any case. The preset measures 167.50 x 251.50 x 59.90 mm, so only Y exceeds a
+220 mm bed; one cut at `Y=0` yields two 167.50 x 125.75 mm pieces that both fit. Note `cutlery_bin.py:68`
+already anticipates exactly this: *"Grid-aligned; splittable on the chop bin's +/-42 mm internal grid lines."*
 
-| Approach | 3-unit piece | 4-unit piece |
+### Cut position, and the clearance question
+
+The Gridfinity 0.5 mm clearance is applied once to the whole footprint, not per unit: a native `N`-unit
+dimension measures `N*42 - 0.5` mm (verified at N = 3, 4, 6 and 7). The footprint is therefore inset 0.25 mm
+per side, which means **the true internal grid line is not offset from the model's own edge by a whole
+multiple of 42**. Cutting at `min + n*42` lands 0.25 mm off the grid line; the correct cut is at
+`nominal_min + n*42`, i.e. 0.25 mm further in. Measured on the chop-board at its true grid line `Y=0`:
+
+| | piece width | pair total |
 | --- | --- | --- |
-| Generate natively as 3x3 and 4x3 | 125.5 mm | 167.5 mm |
-| Slice a 7x3 at the 3-unit boundary | 126.0 mm | 167.5 mm |
+| Raw halves, cut on the grid line | 125.75 mm each | **251.50 mm — exactly native** |
+| Each cut face shaved by 0.25 mm | **125.50 mm — exactly native 4x3** | 251.00 mm |
 
-The sliced piece inherits no clearance on its cut face, leaving it 0.5 mm oversized across three cells —
-enough to bind in a baseplate. Native generation gives each piece its own correct clearance and a properly
-finished edge, which also matches what the "Why" section above already observes: two ordinary invocations
-already produce the right parts today.
+So which is correct depends entirely on what the pieces are *for*, and the design must distinguish the two:
+
+- **Pieces glued back into one item** (the chop-board case, forced by its spanning pocket): do not shave. The
+  raw halves already sum to the native width. Shaving would leave the assembly 0.5 mm undersized — loose
+  rather than binding, so harmless, but pointless.
+- **Pieces standing alone in their own baseplate cells** (a 7x3 plate becoming a 3x3 and a 4x3): shave
+  0.25 mm off each cut face and each piece matches its native equivalent exactly.
+
+A note on how much this matters in practice: field experience cutting these models in OrcaSlicer without
+adding any clearance has worked well so far, and cutting on the true grid line leaves only 0.25 mm of excess
+in the standalone case rather than the 0.5 mm first assumed here. Treat the shave as correctness for the
+standalone case, not as a fix for an observed failure.
 
 Consequences for the design:
 
-- Prefer computing sub-footprints and generating each natively; treat `split()` as the fallback for cuts
-  that cannot land on a unit boundary (which the non-goal below currently excludes anyway).
-- If `split()` is ever used, the design must decide what happens to clearance on the cut face rather than
-  inheriting the 0.5 mm error silently.
-- `split()` remains the more plausible route for bins, whose walls and pockets have no meaning at a
-  sub-footprint level — but a naive cut leaves an open-ended pocket that would need re-walling, so this does
-  not by itself resolve the bins question raised above.
+- Slicing is not merely a fallback — for presets with explicitly-sized pockets it is the only mechanism.
+  Native sub-footprint generation stays the better route for plates, where both approaches are available.
+- Derive cut positions from the nominal grid, not from the model's bounding box, or every cut lands 0.25 mm
+  off.
+- The glued-versus-standalone distinction determines whether to shave, so it needs to be an explicit input
+  (a flag, or implied by product type) rather than a silent assumption.
+- Bins cut this way still have an open-ended pocket at the join. For a glued assembly that is correct and
+  needs no re-walling; for standalone pieces it would, which is a further reason the two cases differ.
 - The live `knife-blade-block` requirement "Block prints without splitting" explicitly promises the block
   needs none of this machinery; keep it that way, and note the `cleaver-block-variant` stub flags a deeper
   channel that should be re-checked against a typical bed.
