@@ -495,3 +495,114 @@ def test_cli_blanking_plate_print_bed_check_uses_actual_bounding_box(
     err = capsys.readouterr().err
     assert result["exit_code"] == 0
     assert "exceeds the print volume width" in err
+
+
+def _split_stub(pieces: int = 2) -> list[object]:
+    """Stand-ins for split pieces, each exposing the bounding box the CLI orders and measures."""
+    return [_stub_part(x=167.5, y=125.75, z=59.9) for _ in range(pieces)]
+
+
+def _capture_split_cli(
+    monkeypatch: pytest.MonkeyPatch, argv: list[str], part: object | None = None, pieces: int = 2
+) -> dict:
+    """Run the CLI with geometry, splitting and export mocked, recording the split call and exports."""
+    captured: dict = {"exports": []}
+    stub = part if part is not None else _stub_part(x=167.5, y=251.5, z=59.9)
+
+    def fake_kitchen(params: BinParameters) -> object:
+        captured["params"] = params
+        return stub
+
+    def fake_split(_part: object, n_x: int, n_y: int, bed_x: float, bed_y: float, mode: object) -> list[object]:
+        captured["split_args"] = (n_x, n_y, bed_x, bed_y, mode)
+        return _split_stub(pieces)
+
+    def fake_export(_part: object, path: Path) -> Path:
+        captured["exports"].append(path)
+        path.touch()
+        return path
+
+    monkeypatch.setattr(main, "create_kitchen_bin", fake_kitchen)
+    monkeypatch.setattr(main, "create_cutlery_bin", fake_kitchen)
+    monkeypatch.setattr(main, "split_for_print_bed", fake_split)
+    monkeypatch.setattr(main, "export_bin", fake_export)
+
+    captured["exit_code"] = main.main(argv)
+    return captured
+
+
+@pytest.mark.scenario("print-splitting", "Oversized model is not split without the flag")
+def test_cli_does_not_split_without_the_flag(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """An oversized model exports as a single file unless --split is given."""
+    oversized = _stub_part(x=167.5, y=251.5, z=59.9)
+    result = _capture_split_cli(monkeypatch, ["--output", str(tmp_path / "chop.stl")], part=oversized)
+    assert result["exit_code"] == 0
+    assert "split_args" not in result
+    assert result["exports"] == [tmp_path / "chop.stl"]
+
+
+@pytest.mark.scenario("print-splitting", "Split produces bed-fitting pieces")
+def test_cli_split_passes_grid_and_bed_to_the_splitter(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """--split hands the model's grid size and the configured bed to the splitter."""
+    result = _capture_split_cli(
+        monkeypatch, ["--preset", "chop-board", "--split", "--output", str(tmp_path / "chop.stl")]
+    )
+    assert result["exit_code"] == 0
+    n_x, n_y, bed_x, bed_y, mode = result["split_args"]
+    assert (n_x, n_y) == (result["params"].grid_x, result["params"].grid_y)
+    assert (bed_x, bed_y) == (220.0, 220.0)
+    assert mode is main.SplitMode.GLUED
+
+
+@pytest.mark.scenario("print-splitting", "Pieces are written to predictable paths")
+def test_cli_split_writes_numbered_piece_paths(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Each piece is written beside the requested output path with a -partN suffix."""
+    result = _capture_split_cli(
+        monkeypatch, ["--preset", "chop-board", "--split", "--output", str(tmp_path / "chop.stl")]
+    )
+    assert result["exports"] == [tmp_path / "chop-part1.stl", tmp_path / "chop-part2.stl"]
+
+
+@pytest.mark.scenario("print-splitting", "Piece numbering is stable across runs")
+def test_cli_split_piece_paths_are_stable_across_runs(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Re-running the same split invocation maps pieces to the same filenames."""
+    argv = ["--preset", "chop-board", "--split", "--output", str(tmp_path / "chop.stl")]
+    first = _capture_split_cli(monkeypatch, argv)
+    second = _capture_split_cli(monkeypatch, argv)
+    assert first["exports"] == second["exports"]
+
+
+@pytest.mark.scenario("print-splitting", "Standalone mode warns on a pocketed model")
+def test_cli_standalone_split_warns_on_a_pocketed_model(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """Standalone pieces of a bin have open-ended pockets, which the CLI warns about but still exports."""
+    result = _capture_split_cli(
+        monkeypatch,
+        ["--preset", "chop-board", "--split", "--split-mode", "standalone", "--output", str(tmp_path / "c.stl")],
+    )
+    assert result["exit_code"] == 0
+    assert "open-ended pocket" in capsys.readouterr().err
+    assert len(result["exports"]) == 2
+
+
+@pytest.mark.scenario("print-splitting", "Z overflow is reported as unsplittable")
+def test_cli_split_warns_that_height_overflow_is_unsplittable(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """A model taller than the bed still splits on X and Y, with a warning that Z cannot be resolved."""
+    too_tall = _stub_part(x=167.5, y=251.5, z=300.0)
+    result = _capture_split_cli(
+        monkeypatch, ["--split", "--output", str(tmp_path / "tall.stl")], part=too_tall
+    )
+    assert result["exit_code"] == 0
+    assert "cannot resolve a height overflow" in capsys.readouterr().err
+    assert len(result["exports"]) == 2
+
+
+def test_cli_split_mode_without_split_is_an_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """--split-mode without --split would silently do nothing, so it is rejected."""
+    result = _capture_split_cli(
+        monkeypatch, ["--split-mode", "standalone", "--output", str(tmp_path / "x.stl")]
+    )
+    assert result["exit_code"] == 2

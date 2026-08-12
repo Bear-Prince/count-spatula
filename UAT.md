@@ -61,8 +61,9 @@ re-verified.
 
 - Command: `uv run python main.py --preset chop-board --output build/chop.stl`
 - Expect: the model still exports (exit 0), but a warning is printed to stderr that the model **depth**
-  (251.5 mm) exceeds the print volume depth (220 mm) - because the chop bin is 6 units long. Overriding with a
-  larger `--bed-y` (≥ 252) clears the warning; a tight `--bed-y 100` warns on any bin.
+  (251.5 mm) exceeds the print volume depth (220 mm) - because the chop bin is 6 units long, and that
+  `--split` will cut it into bed-sized pieces. Overriding with a larger `--bed-y` (≥ 252) clears the warning;
+  a tight `--bed-y 100` warns on any bin. A height overflow warns without mentioning `--split`.
 - Last passed: 2026-06-22 (also covered by tests)
 
 ### UAT-9: CutleryBin with wave dividers (2×4, 3 columns)
@@ -75,4 +76,18 @@ re-verified.
   the nominal (straight-divider) spacing, and leaves a printable gap to its neighbour and the pocket walls
   at the widest point of its swing. The full-height handle slot still runs through the dividers' central
   band, and the wave shape adds no material below the inner floor (the Gridfinity base is unaffected).
+- Last passed: not yet verified
+
+### UAT-10: split the chop-board preset for a 220 mm bed
+
+- Command: `uv run python main.py --preset chop-board --split --output build/chop.stl`
+- Expect: exit 0; two files written, `build/chop-part1.stl` and `build/chop-part2.stl`, each with a
+  167.5 × 125.75 mm footprint that fits the default 220 × 220 mm bed. The cut lands on the bin's centreline
+  (the internal grid line 3 units in), not 0.25 mm off it. Each piece carries half the 220 × 160 mm pocket,
+  open at the cut face, and half the handle slots. Laid cut-face-to-cut-face in a slicer the two halves
+  reassemble to the original 167.5 × 251.5 mm with the pocket continuous across the join and no step or gap
+  at the walls or floor.
+- Also check: the same command with `--split-mode standalone` warns on stderr about open-ended pockets and
+  produces pieces 0.25 mm shorter on the cut axis (125.5 mm) - correct behaviour, but not what you want for
+  this bin.
 - Last passed: not yet verified

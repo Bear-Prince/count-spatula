@@ -2,7 +2,7 @@
 
 import pytest
 
-_REAL_GEOMETRY_FIXTURES = ("bins", "knife_blocks", "blanking_plates")
+_REAL_GEOMETRY_FIXTURES = ("bins", "knife_blocks", "blanking_plates", "split_parts")
 
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:

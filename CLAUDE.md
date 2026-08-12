@@ -20,6 +20,12 @@ uv run python main.py --grid-x 2 --grid-y 4 --divisions 3 --format 3mf
 # Build a blanking plate (wall-less, caps leftover baseplate grid) on a 3x3 footprint
 uv run python main.py --blanking-plate --grid-x 3 --grid-y 3
 
+# Cut a model too large for the bed into grid-aligned, bed-sized pieces (writes -part1, -part2, ...)
+uv run python main.py --preset chop-board --split --output build/chop.stl
+
+# Split into pieces that each stand alone in their own baseplate cells, rather than being glued back together
+uv run python main.py --blanking-plate --grid-x 7 --grid-y 3 --split --split-mode standalone
+
 # Run tests
 uv run pytest
 
@@ -65,9 +71,18 @@ Pre-commit hooks run `ruff check`, `markdownlint`, and `yamllint` on commit; `py
 - `PRESETS` / `resolve_preset(name)` / `preset_requires_cutouts(name)` - named parameter presets (e.g. `"chop-board"`, which reproduces the original chopping-board bin and forbids disabling its cutouts).
 - `check_print_bed(model_x_mm, model_y_mm, model_z_mm, bed_x_mm, bed_y_mm, bed_z_mm)` - checks the model's
   actual bounding box (all mm) against the print-bed volume and returns warning strings for each axis that exceeds
-  its limit. The model is evaluated as-generated (no rotation).
+  its limit. The model is evaluated as-generated (no rotation). X and Y warnings name `--split` as the remedy; the
+  Z warning does not, since splitting has no pitch to align to on that axis.
+- `grid_line_offset(line_index, n_units)` / `plan_grid_cuts(n_units, bed_mm)` / `SplitMode` /
+  `split_for_print_bed(part, n_units_x, n_units_y, bed_x_mm, bed_y_mm, mode)` - grid-aligned print splitting.
+  Cut positions come from the *nominal* grid (`PITCH * (k - n/2)`), never from the model's bounding box: the
+  0.5 mm clearance applies once per footprint, so measuring `n*42` from the model's own edge lands 0.25 mm off
+  every internal grid line. `SplitMode.GLUED` (the default) leaves cut faces alone so pieces sum back to the
+  original dimensions; `SplitMode.STANDALONE` shaves 0.25 mm off every cut face so each piece matches a
+  natively-generated model of its size. The built solid is sliced rather than regenerated at a smaller
+  footprint, which is what lets presets with explicitly-sized pockets (e.g. `chop-board`) be split at all.
 
-**`main.py`** is the CLI layer. It parses args into a `BinParameters` (optionally seeded from `--preset`), calls `export_bin()` to write STL or 3MF (selected by `--format` or the output extension), and returns process exit codes. `--divisions >= 2` builds a `CutleryBin`; otherwise a `KitchenBin`. `--blanking-plate` builds a `BlankingPlate` instead, reusing `--grid-x`/`--grid-y` for the plate's own footprint and ignoring bin-only flags (pocket, cutout, divider, height). Tests mock the bin/plate factories and export to avoid real geometry builds.
+**`main.py`** is the CLI layer. It parses args into a `BinParameters` (optionally seeded from `--preset`), calls `export_bin()` to write STL or 3MF (selected by `--format` or the output extension), and returns process exit codes. `--divisions >= 2` builds a `CutleryBin`; otherwise a `KitchenBin`. `--blanking-plate` builds a `BlankingPlate` instead, reusing `--grid-x`/`--grid-y` for the plate's own footprint and ignoring bin-only flags (pocket, cutout, divider, height). `--split` (with optional `--split-mode`) cuts the built model into bed-sized pieces written as `<stem>-part<n>.<ext>`; without it the single-file path is untouched. Tests mock the bin/plate factories and export to avoid real geometry builds.
 
 **`gridfinity_build123d`** is pulled over HTTPS from our mirror fork (`https://github.com/Bear-Prince/gridfinity_build123d`, upstream `Ruudjhuu/gridfinity_build123d`), pinned to a specific commit in `pyproject.toml`. The fork exists only so builds survive upstream disappearing - never diverge it; to pick up upstream changes, sync the fork and bump the pin deliberately (geometry can change, so UAT applies). Requires Linux x86_64.
 

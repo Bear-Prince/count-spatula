@@ -11,12 +11,16 @@ from cutlery_bin import (
     BinParameters,
     BlankingPlateParameters,
     KitchenBin,
+    SplitMode,
     check_print_bed,
     create_blanking_plate,
     create_cutlery_bin,
     create_kitchen_bin,
+    grid_line_offset,
+    plan_grid_cuts,
     preset_names,
     resolve_preset,
+    split_for_print_bed,
 )
 
 
@@ -590,3 +594,143 @@ def test_blanking_plate_is_a_valid_solid(blanking_plates: dict) -> None:
     """A blanking plate is a valid, watertight solid suitable for export."""
     assert blanking_plates["default"].is_valid()
     assert blanking_plates["3x3"].is_valid()
+
+
+@pytest.mark.scenario("print-splitting", "Cut lands on the nominal grid line")
+def test_grid_line_offset_is_measured_from_the_nominal_grid() -> None:
+    """Line 3 of a 6-unit axis is its centreline, derived from the nominal grid rather than the model."""
+    assert grid_line_offset(3, 6) == pytest.approx(0.0)
+    assert plan_grid_cuts(6, 220.0) == pytest.approx([0.0])
+
+
+@pytest.mark.scenario("print-splitting", "Cut position is not derived from the bounding box")
+def test_grid_line_offset_is_not_the_bounding_box_derived_position() -> None:
+    """Line 3 of a 7-unit axis sits at -21.0 mm, half a clearance from the naive edge-derived position."""
+    assert grid_line_offset(3, 7) == pytest.approx(-21.0)
+    naive = -(7 * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM) / 2 + 3 * GRIDFINITY_PITCH_MM
+    assert naive == pytest.approx(-20.75)
+    assert grid_line_offset(3, 7) != pytest.approx(naive)
+
+
+@pytest.mark.scenario("print-splitting", "Six units split into two equal halves")
+def test_plan_grid_cuts_splits_six_units_evenly() -> None:
+    """Six units on a 220 mm bed need one cut, giving two equal 3-unit pieces."""
+    assert plan_grid_cuts(6, 220.0) == pytest.approx([0.0])
+
+
+@pytest.mark.scenario("print-splitting", "Seven units split unevenly only where necessary")
+def test_plan_grid_cuts_splits_seven_units_into_four_and_three() -> None:
+    """Seven units cannot divide evenly, so one cut gives the closest split available: 4 and 3."""
+    cuts = plan_grid_cuts(7, 220.0)
+    assert cuts == pytest.approx([21.0])
+    assert grid_line_offset(4, 7) == pytest.approx(cuts[0])
+
+
+def test_plan_grid_cuts_returns_no_cuts_when_the_axis_fits() -> None:
+    """An axis within the bed needs no cuts, including when it fits only by its clearance."""
+    assert plan_grid_cuts(4, 220.0) == []
+    assert plan_grid_cuts(6, 251.5) == []
+    assert plan_grid_cuts(6, 251.0) == pytest.approx([0.0])
+
+
+def test_plan_grid_cuts_rejects_a_bed_narrower_than_one_unit() -> None:
+    """No grid-aligned split can help when a single grid unit will not fit the bed."""
+    with pytest.raises(ValueError, match="cannot fit even one"):
+        plan_grid_cuts(3, 40.0)
+
+
+@pytest.fixture(scope="module")
+def split_parts() -> dict:
+    """Build the reference models for split tests once for the whole module (geometry builds are slow)."""
+    chop = resolve_preset("chop-board")
+    return {
+        "chop": create_kitchen_bin(chop),
+        "chop_params": chop,
+        "plate_7x3": create_blanking_plate(BlankingPlateParameters(grid_x=7, grid_y=3)),
+        "plate_7x7": create_blanking_plate(BlankingPlateParameters(grid_x=7, grid_y=7)),
+        "native_4x3": create_blanking_plate(BlankingPlateParameters(grid_x=4, grid_y=3)),
+        "native_3x3": create_blanking_plate(BlankingPlateParameters(grid_x=3, grid_y=3)),
+    }
+
+
+@pytest.mark.scenario("print-splitting", "Glued pieces reassemble to the native dimension")
+@pytest.mark.scenario("print-splitting", "A preset with an explicitly-sized pocket splits")
+def test_chop_board_splits_into_two_glued_halves(split_parts: dict) -> None:
+    """The chop-board's halves are 125.75 mm each and sum to the unsplit 251.50 mm, ready to glue."""
+    params = split_parts["chop_params"]
+    pieces = split_for_print_bed(split_parts["chop"], params.grid_x, params.grid_y, 220.0, 220.0)
+    assert len(pieces) == 2
+    depths = [piece.bounding_box().size.Y for piece in pieces]
+    for depth in depths:
+        assert depth == pytest.approx(125.75, abs=0.01)
+    assert sum(depths) == pytest.approx(split_parts["chop"].bounding_box().size.Y, abs=0.01)
+
+
+@pytest.mark.scenario("print-splitting", "Split produces bed-fitting pieces")
+def test_split_pieces_fit_the_bed(split_parts: dict) -> None:
+    """Every piece of a split model fits inside the configured bed on both horizontal axes."""
+    params = split_parts["chop_params"]
+    pieces = split_for_print_bed(split_parts["chop"], params.grid_x, params.grid_y, 220.0, 220.0)
+    for piece in pieces:
+        box = piece.bounding_box()
+        assert box.size.X <= 220.0
+        assert box.size.Y <= 220.0
+
+
+@pytest.mark.scenario("print-splitting", "Split conserves the model volume")
+def test_glued_split_conserves_volume(split_parts: dict) -> None:
+    """Glued mode removes no material, so the pieces' combined volume matches the unsplit model's."""
+    params = split_parts["chop_params"]
+    whole = split_parts["chop"]
+    pieces = split_for_print_bed(whole, params.grid_x, params.grid_y, 220.0, 220.0)
+    assert sum(piece.volume for piece in pieces) == pytest.approx(whole.volume, rel=1e-9)
+
+
+@pytest.mark.scenario("print-splitting", "Standalone pieces match native dimensions")
+@pytest.mark.scenario("print-splitting", "A wall-less plate splits")
+def test_standalone_split_matches_natively_generated_plates(split_parts: dict) -> None:
+    """Shaving every cut face lands each piece on the dimensions of a natively-generated plate."""
+    pieces = split_for_print_bed(split_parts["plate_7x3"], 7, 3, 220.0, 220.0, SplitMode.STANDALONE)
+    widths = sorted(piece.bounding_box().size.X for piece in pieces)
+    expected = sorted(
+        [split_parts["native_3x3"].bounding_box().size.X, split_parts["native_4x3"].bounding_box().size.X]
+    )
+    assert widths == pytest.approx(expected, abs=0.01)
+
+
+@pytest.mark.scenario("print-splitting", "A model oversized on both axes splits on both")
+def test_split_applies_to_both_axes(split_parts: dict) -> None:
+    """A model over the bed on X and Y is cut on both, yielding a grid of bed-fitting pieces."""
+    pieces = split_for_print_bed(split_parts["plate_7x7"], 7, 7, 220.0, 220.0)
+    assert len(pieces) == 4
+    for piece in pieces:
+        box = piece.bounding_box()
+        assert box.size.X <= 220.0
+        assert box.size.Y <= 220.0
+
+
+@pytest.mark.scenario("print-bed-validation", "Horizontal overflow names the split remedy")
+def test_horizontal_overflow_warning_names_split() -> None:
+    """A width or depth overflow tells the user which flag resolves it."""
+    assert "--split" in check_print_bed(300.0, 100.0, 100.0, 220.0, 220.0, 240.0)[0]
+    assert "--split" in check_print_bed(100.0, 300.0, 100.0, 220.0, 220.0, 240.0)[0]
+
+
+@pytest.mark.scenario("print-bed-validation", "Height overflow does not suggest splitting")
+def test_height_overflow_warning_does_not_suggest_split() -> None:
+    """Splitting does not apply to Z, so a height overflow must not point at it."""
+    warnings = check_print_bed(100.0, 100.0, 300.0, 220.0, 220.0, 240.0)
+    assert len(warnings) == 1
+    assert "--split" not in warnings[0]
+
+
+def test_plan_grid_cuts_rejects_a_non_positive_grid() -> None:
+    """A grid axis of fewer than one unit is not a footprint that can be planned."""
+    with pytest.raises(ValueError, match="at least 1"):
+        plan_grid_cuts(0, 220.0)
+
+
+def test_split_returns_the_unmodified_part_when_it_already_fits() -> None:
+    """A model within the bed on both axes is returned whole, with no geometry work done on it."""
+    sentinel = object()
+    assert split_for_print_bed(sentinel, 2, 4, 220.0, 220.0) == [sentinel]

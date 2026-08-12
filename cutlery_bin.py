@@ -11,6 +11,7 @@ import math
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
+from itertools import pairwise
 
 from build123d import (
     MM,
@@ -22,6 +23,7 @@ from build123d import (
     BuildLine,
     BuildPart,
     BuildSketch,
+    Keep,
     Line,
     Locations,
     Mode,
@@ -33,7 +35,9 @@ from build123d import (
     add,
     extrude,
     make_face,
+    split,
 )
+from build123d.topology import Shape
 from gridfinity_build123d import BaseEqual
 
 GRIDFINITY_PITCH_MM = 42 * MM  # Standard Gridfinity grid pitch in mm per unit.
@@ -591,17 +595,136 @@ def check_print_bed(
     rotation). Returns an empty list when the model fits within the build volume on every axis.
     """
     warnings: list[str] = []
-    for label, model, limit in (
-        ("width", model_x_mm, bed_x_mm),
-        ("depth", model_y_mm, bed_y_mm),
-        ("height", model_z_mm, bed_z_mm),
+    # Only the horizontal axes have a Gridfinity pitch to cut along, so a height overflow must not
+    # suggest splitting as a remedy.
+    for label, model, limit, splittable in (
+        ("width", model_x_mm, bed_x_mm, True),
+        ("depth", model_y_mm, bed_y_mm, True),
+        ("height", model_z_mm, bed_z_mm, False),
     ):
         if model > limit:
+            remedy = " Re-run with --split to cut it into bed-sized pieces." if splittable else ""
             warnings.append(
                 f"Model {label} ({model:.1f} mm) exceeds the print volume {label} "
-                f"({limit:.1f} mm) by {model - limit:.1f} mm."
+                f"({limit:.1f} mm) by {model - limit:.1f} mm.{remedy}"
             )
     return warnings
+
+
+class SplitMode(Enum):
+    """What the pieces of a split model are for, which decides whether cut faces are shaved.
+
+    ``GLUED`` pieces are reassembled into one model, so their cut faces are left alone and the pieces
+    sum to the original model's dimensions. ``STANDALONE`` pieces each sit in their own baseplate cells,
+    so every cut face is shaved by half a clearance to match a natively-generated model of that size.
+    """
+
+    GLUED = "glued"
+    STANDALONE = "standalone"
+
+
+def grid_line_offset(line_index: int, n_units: int) -> float:
+    """Return the offset from the model's centre of an internal Gridfinity grid line.
+
+    ``line_index`` counts whole grid units from the footprint's nominal edge, so line 3 of a 6-unit axis
+    is its centreline. Deriving this from the nominal grid matters: a footprint applies its clearance
+    once to the whole span, so measuring ``n * PITCH`` from the model's own edge lands half a clearance
+    short of the real grid line every time.
+    """
+    return GRIDFINITY_PITCH_MM * (line_index - n_units / 2)
+
+
+def plan_grid_cuts(n_units: int, bed_mm: float) -> list[float]:
+    """Return the grid-aligned cut offsets that fit an ``n_units`` axis onto ``bed_mm``.
+
+    Offsets are measured from the model's centre and land on the *nominal* Gridfinity grid, not on
+    positions derived from the model's own edges. A footprint applies its clearance once to the whole
+    span rather than per unit, so the model is inset half a clearance per side and its internal grid
+    lines are not whole pitch multiples from its edge. The k-th line of an ``n`` unit axis is therefore
+    at ``PITCH * (k - n / 2)``.
+
+    Returns an empty list when the axis already fits. Pieces are as few and as equal as possible.
+    """
+    if n_units < 1:
+        msg = f"Grid units must be at least 1, got {n_units}."
+        raise ValueError(msg)
+    if n_units * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM <= bed_mm:
+        return []
+    max_units = int(bed_mm // GRIDFINITY_PITCH_MM)
+    if max_units < 1:
+        msg = (
+            f"A print bed of {bed_mm:.1f} mm cannot fit even one {GRIDFINITY_PITCH_MM:.0f} mm grid unit, "
+            "so no grid-aligned split can make this model printable."
+        )
+        raise ValueError(msg)
+    piece_count = math.ceil(n_units / max_units)
+    base_run, remainder = divmod(n_units, piece_count)
+    runs = [base_run + (1 if index < remainder else 0) for index in range(piece_count)]
+    cuts: list[float] = []
+    consumed = 0
+    for run in runs[:-1]:
+        consumed += run
+        cuts.append(grid_line_offset(consumed, n_units))
+    return cuts
+
+
+def _axis_cut_plane(axis_index: int, position: float) -> Plane:
+    """Build a cutting plane whose normal points along +X or +Y.
+
+    The built-in ``Plane.XZ`` has a -Y normal, which would silently invert ``Keep.TOP`` on that axis, so
+    the planes are constructed explicitly and ``Keep.TOP`` always means the larger coordinate.
+    """
+    if axis_index == 0:
+        return Plane(origin=(position, 0, 0), z_dir=(1, 0, 0))
+    return Plane(origin=(0, position, 0), z_dir=(0, 1, 0))
+
+
+def _slice_axis(parts: list[Shape], axis_index: int, cuts: list[float], shave_mm: float) -> list[Shape]:
+    """Cut every part into the bands delimited by ``cuts``, moving each cut face inward by ``shave_mm``."""
+    if not cuts:
+        return parts
+    bounds: list[float | None] = [None, *cuts, None]
+    sliced: list[Shape] = []
+    for part in parts:
+        for lower, upper in pairwise(bounds):
+            piece = part
+            if lower is not None:
+                piece = split(piece, bisect_by=_axis_cut_plane(axis_index, lower + shave_mm), keep=Keep.TOP)
+            if upper is not None:
+                piece = split(piece, bisect_by=_axis_cut_plane(axis_index, upper - shave_mm), keep=Keep.BOTTOM)
+            sliced.append(piece)
+    return sliced
+
+
+def _piece_sort_key(piece: Shape) -> tuple[float, float]:
+    """Order pieces by ascending X then ascending Y, so filenames map to the same piece across runs."""
+    box = piece.bounding_box()
+    return (round(box.min.X, 3), round(box.min.Y, 3))
+
+
+def split_for_print_bed(
+    part: Shape,
+    n_units_x: int,
+    n_units_y: int,
+    bed_x_mm: float,
+    bed_y_mm: float,
+    mode: SplitMode = SplitMode.GLUED,
+) -> list[Shape]:
+    """Cut a built model into bed-fitting pieces along its Gridfinity grid lines.
+
+    The model is sliced as built rather than regenerated at a smaller footprint, so this works for
+    presets whose pocket is explicitly sized and therefore has no smaller-footprint equivalent. Cuts
+    are planned per axis and applied in sequence, so a model oversized on both axes yields a grid of
+    pieces. Returns the single unmodified part when the model already fits.
+    """
+    x_cuts = plan_grid_cuts(n_units_x, bed_x_mm)
+    y_cuts = plan_grid_cuts(n_units_y, bed_y_mm)
+    if not x_cuts and not y_cuts:
+        return [part]
+    shave_mm = GRIDFINITY_CLEARANCE_MM / 2 if mode is SplitMode.STANDALONE else 0.0
+    pieces = _slice_axis([part], 0, x_cuts, shave_mm)
+    pieces = _slice_axis(pieces, 1, y_cuts, shave_mm)
+    return sorted(pieces, key=_piece_sort_key)
 
 
 # Named presets: each returns a fully-populated BinParameters.

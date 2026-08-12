@@ -142,6 +142,31 @@ uv run python main.py --grid-x 6 --grid-y 4 --bed-x 235 --bed-y 235
 The CLI validates parameter ranges and returns a non-zero exit code with
 actionable text when values are invalid (including an unknown `--preset`).
 
+## Splitting models too large for the bed
+
+Some models do not fit a typical bed - the `chop-board` preset is 167.5 × 251.5 mm, so its depth exceeds a
+220 mm bed. `--split` cuts the model along its Gridfinity grid lines into bed-sized pieces, choosing the
+fewest and most equal pieces that fit:
+
+```bash
+uv run python main.py --preset chop-board --split --output build/chop.stl
+```
+
+That writes `build/chop-part1.stl` and `build/chop-part2.stl`, each 167.5 × 125.75 mm. Without `--split`
+the model still exports as one oversized file, exactly as before; the bed warning just points at the flag.
+
+The pieces are **butt-jointed and need adhesive** - there are no dowels or alignment features. Cut faces are
+left untouched, so the two halves sum back to the original 251.5 mm and the reassembled bin drops into the
+same baseplate cells as an unsplit one. The pocket is cut through and becomes continuous again once glued.
+
+Use `--split-mode standalone` instead when each piece should work as an independent model in its own cells -
+for example a 7×3 blanking plate becoming a usable 4×3 and 3×3. That shaves 0.25 mm from every cut face so
+each piece matches a natively-generated model of its size. It is the wrong mode for anything with a pocket,
+which would be left open-ended, and the CLI warns if you ask for it there.
+
+Splitting applies to the horizontal axes only. A model taller than the bed cannot be helped by a grid-aligned
+cut, and the CLI says so rather than implying otherwise.
+
 ## Knife blade block
 
 `--knife-block` builds a `KnifeBladeBlock` instead of a bin: a small Gridfinity module that holds

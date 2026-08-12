@@ -11,6 +11,7 @@ from build123d.topology import Shape
 from cutlery_bin import (
     BinParameters,
     BlankingPlateParameters,
+    SplitMode,
     check_print_bed,
     create_blanking_plate,
     create_cutlery_bin,
@@ -18,6 +19,7 @@ from cutlery_bin import (
     preset_names,
     preset_requires_cutouts,
     resolve_preset,
+    split_for_print_bed,
 )
 from knife_block import KnifeBlockParameters, check_drawer_clearance, create_knife_blade_block
 
@@ -154,6 +156,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--bed-y", type=float, default=DEFAULT_BED_Y_MM, help="Print bed depth in mm.")
     parser.add_argument("--bed-z", type=float, default=DEFAULT_BED_Z_MM, help="Maximum print height in mm.")
     parser.add_argument(
+        "--split",
+        action="store_true",
+        help="Cut a model too large for the print bed into bed-sized pieces along its Gridfinity grid lines.",
+    )
+    parser.add_argument(
+        "--split-mode",
+        choices=[mode.value for mode in SplitMode],
+        default=None,
+        help="What the split pieces are for. 'glued' (the default) leaves cut faces untouched so the pieces "
+        "reassemble to the original dimensions; 'standalone' shaves each cut face so every piece matches a "
+        "natively-generated model of its size. Requires --split.",
+    )
+    parser.add_argument(
         "--format",
         choices=["stl", "3mf"],
         default=None,
@@ -243,6 +258,18 @@ def create_blanking_plate_parameters(args: argparse.Namespace) -> BlankingPlateP
     return replace(BlankingPlateParameters(), **overrides)
 
 
+def split_output_paths(output_path: Path, piece_count: int) -> list[Path]:
+    """Return one numbered output path per piece, beside the requested output path.
+
+    Pieces arrive in a position-derived order, so the same invocation always maps the same piece to the
+    same filename and a re-run overwrites rather than reshuffles.
+    """
+    return [
+        output_path.with_name(f"{output_path.stem}-part{index}{output_path.suffix}")
+        for index in range(1, piece_count + 1)
+    ]
+
+
 def default_output_path(
     params: BinParameters | KnifeBlockParameters | BlankingPlateParameters, fmt: str = "stl"
 ) -> Path:
@@ -272,6 +299,10 @@ def main(argv: list[str] | None = None) -> int:
         else:
             params = create_parameters(args)
         params.validate()
+        if args.split_mode is not None and not args.split:
+            msg = "--split-mode requires --split; without it there is nothing to split."
+            raise ValueError(msg)
+        split_mode = SplitMode(args.split_mode) if args.split_mode is not None else SplitMode.GLUED
         fmt = args.format if args.format is not None else "stl"
         if args.output is not None and args.format is not None:
             output_ext = args.output.suffix.lstrip(".").lower()
@@ -300,7 +331,26 @@ def main(argv: list[str] | None = None) -> int:
             )
             for warning in drawer_warnings:
                 print(f"Warning: {warning}", file=sys.stderr)
-        exported_file = export_bin(part, output_path)
+        if args.split:
+            if args.bed_z < size.Z:
+                print(
+                    "Warning: splitting cannot resolve a height overflow, since there is no Gridfinity "
+                    "pitch to cut along on Z; the pieces below are still too tall.",
+                    file=sys.stderr,
+                )
+            if split_mode is SplitMode.STANDALONE and isinstance(params, BinParameters):
+                print(
+                    "Warning: --split-mode standalone on a model with a pocket leaves each piece with an "
+                    "open-ended pocket; use the default glued mode to reassemble them into one bin.",
+                    file=sys.stderr,
+                )
+            pieces = split_for_print_bed(part, params.grid_x, params.grid_y, args.bed_x, args.bed_y, split_mode)
+            exported_files = [
+                export_bin(piece, path)
+                for piece, path in zip(pieces, split_output_paths(output_path, len(pieces)), strict=True)
+            ]
+        else:
+            exported_files = [export_bin(part, output_path)]
     except (ValueError, FileNotFoundError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 2
@@ -308,7 +358,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Error: Failed to write output: {exc}", file=sys.stderr)
         return 2
 
-    print(f"Exported: {exported_file}")
+    for exported_file in exported_files:
+        print(f"Exported: {exported_file}")
     return 0
 
 
