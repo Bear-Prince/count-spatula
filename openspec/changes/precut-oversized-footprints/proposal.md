@@ -92,7 +92,16 @@ Consequences for the design:
   needs none of this machinery; keep it that way, and note the `cleaver-block-variant` stub flags a deeper
   channel that should be re-checked against a typical bed.
 
+## Capabilities
+
+- `print-splitting` (new) — opt-in `--split` that cuts an oversized model along Gridfinity grid lines into
+  bed-fitting pieces, with `--split-mode {glued,standalone}` controlling whether cut faces are shaved.
+- `print-bed-validation` (modified) — the existing oversize warning gains a pointer to `--split`, so the
+  "warning message is actionable" guarantee now names the remedy.
+
 ## Non-goals
 
 - Arbitrary, non-grid-aligned cut positions — the value of automation here is specifically deriving the grid-
   aligned split; a freeform cut is already served by a slicer's own cut tool.
+- Splitting on Z, generating joinery (dowels, pins), rotating models to fit, or splitting automatically
+  without the flag. See `design.md` for the reasoning on each.
