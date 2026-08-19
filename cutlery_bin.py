@@ -62,8 +62,8 @@ WAVE_SAMPLE_COUNT = 64  # Number of segments used to approximate a wave divider'
 CHOP_GRID_X = 4
 CHOP_GRID_Y = 6
 CHOP_HEIGHT_UNITS = 8
-CHOP_POCKET_LENGTH = 220 * MM
-CHOP_POCKET_WIDTH = 160 * MM
+CHOP_POCKET_LENGTH = 222 * MM  # Board length (220 mm) plus a 1 mm per-side clearance over print/board tolerance.
+CHOP_POCKET_WIDTH = 162 * MM  # Board width (160 mm) plus a 1 mm per-side clearance over print/board tolerance.
 CHOP_POCKET_CORNER_RADIUS = 35 * MM
 CHOP_CUTOUT_OFFSET_UNITS = 2  # Grid-aligned; splittable on the chop bin's +/-42 mm internal grid lines.
 

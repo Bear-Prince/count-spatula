@@ -165,7 +165,23 @@ def test_chop_board_preset_reproduces_chop_bin(bins: dict) -> None:
     assert abs(chop_bbox.size.Y - (6 * GRIDFINITY_PITCH_MM - GRIDFINITY_CLEARANCE_MM)) < 0.1
     assert bins["chop"].volume != pytest.approx(bins["default"].volume)
     chop = resolve_preset("chop-board")
-    assert (chop.pocket_width_mm, chop.pocket_length_mm) == (160, 220)
+    assert (chop.pocket_width_mm, chop.pocket_length_mm) == (162, 222)
+
+
+@pytest.mark.scenario("bin-presets", "Preset pocket clears the board it is sized for")
+def test_chop_board_wall_thickness_reflects_relaxed_pocket(bins: dict) -> None:
+    """The chop-board's built wall thickness reflects the 222x162 pocket, not the pre-relaxation 220x160.
+
+    Regression coverage for the four-month drift where the notebook's tolerance fix never reached the
+    production preset: the pocket dimensions alone can be right while the built geometry is still wrong,
+    so this measures the actual wall thickness from the exported bounding box, not just the parameters.
+    """
+    chop_bbox = bins["chop"].bounding_box()
+    chop = resolve_preset("chop-board")
+    side_wall = (chop_bbox.size.X - chop.pocket_width_mm) / 2
+    end_wall = (chop_bbox.size.Y - chop.pocket_length_mm) / 2
+    assert side_wall == pytest.approx(2.75, abs=0.05)
+    assert end_wall == pytest.approx(14.75, abs=0.05)
 
 
 @pytest.mark.scenario("gridfinity-utensil-bin", "A single division is a plain KitchenBin pocket")

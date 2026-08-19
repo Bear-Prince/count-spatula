@@ -18,9 +18,9 @@ re-verified.
 ### UAT-2: chop-board preset
 
 - Command: `uv run python main.py --preset chop-board --output build/chop.stl`
-- Expect: 4×6 footprint (167.5×251.5 mm); a 220×160 mm rounded pocket sized for a chopping board; full-height
-  handle slots.
-- Last passed: 2026-06-22 (slicer)
+- Expect: 4×6 footprint (167.5×251.5 mm); a 222×162 mm rounded pocket sized for a chopping board (220×160 mm
+  board plus a 1 mm per-side clearance); full-height handle slots.
+- Last passed: not yet verified (pocket dimensions corrected; see `fix-chop-board-pocket-clearance`)
 
 ### UAT-3: CutleryBin (2×4, 3 columns)
 

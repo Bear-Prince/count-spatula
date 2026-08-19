@@ -166,8 +166,8 @@ def test_cli_preset_seeds_parameters(monkeypatch: pytest.MonkeyPatch, tmp_path: 
     """The chop-board preset seeds the chopping-board pocket dimensions."""
     result = _capture_cli(monkeypatch, ["--preset", "chop-board", "--output", str(tmp_path / "chop.stl")])
     assert result["exit_code"] == 0
-    assert result["params"].pocket_length_mm == 220
-    assert result["params"].pocket_width_mm == 160
+    assert result["params"].pocket_length_mm == 222
+    assert result["params"].pocket_width_mm == 162
 
 
 @pytest.mark.scenario("bin-presets", "Override preset values")
@@ -177,7 +177,7 @@ def test_cli_preset_override_applies(monkeypatch: pytest.MonkeyPatch, tmp_path: 
         monkeypatch, ["--preset", "chop-board", "--grid-x", "5", "--output", str(tmp_path / "o.stl")]
     )
     assert result["params"].grid_x == 5
-    assert result["params"].pocket_length_mm == 220
+    assert result["params"].pocket_length_mm == 222
 
 
 @pytest.mark.scenario("multi-format-export", "Default format is STL when no format flag is given")

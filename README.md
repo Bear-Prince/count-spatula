@@ -70,8 +70,8 @@ uv run python main.py \
   --grid-x 4 \
   --grid-y 6 \
   --height-mm 56 \
-  --pocket-length-mm 220 \
-  --pocket-width-mm 160 \
+  --pocket-length-mm 222 \
+  --pocket-width-mm 162 \
   --output build/kitchen_bin_custom.stl
 ```
 
