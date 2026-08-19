@@ -46,8 +46,12 @@
 - [x] 5.4 Regenerate the chop-board (`uv run python main.py --preset chop-board --output build/chop.stl`) and
       confirm the exported bounding box's pocket-derived wall thicknesses measure 2.75 mm / 14.75 mm from the
       STL geometry (not just from the parameter values), so the fix is confirmed in the actual output file.
-- [ ] 5.5 UAT: reprint the whole chop-board and confirm a real IKEA board fits without binding - the gate
-      this change exists to pass.
+- [x] 5.5 UAT: **downgraded from a physical reprint to a slicer eyeball**, per explicit user call - printing
+      the same bin twice costs real filament and time for a change that is a confirmed numeric correction
+      (notebook history + caliper back-solve + STL-geometry measurement all agree already), not new,
+      unvalidated geometry. Verified by loading `build/chop.stl` in OrcaSlicer and confirming the pocket and
+      wall proportions look correct. This is the same tier `UAT.md` already accepts elsewhere (most entries
+      are `(slicer)`, not `(printed)`) - recorded as such, not oversold as a physical fit test.
 - [ ] 5.6 **Deferred until `precut-oversized-footprints` merges to main and this fix is available alongside
       it** (either by merge order or a rebase): reprint the chop-board split (`--split`) at the corrected
       pocket dimensions and confirm the two halves still glue into a bin that holds the board, since the
